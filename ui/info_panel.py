@@ -55,7 +55,7 @@ class InfoPanel:
         for i, side_name in enumerate(side_names):
             if i < len(sides_data):
                 side = sides_data[i]
-                text = f"Сторона {side_name}: {side['length_px']:.1f} px ({side['length_mm']:.2f} mm)"
+                text = f"Сторона {side_name}: {side['length_px']:.1f} px ({side['length_m']:.2f} m)"
                 self.side_labels[i].config(text=text)
             else:
                 self.side_labels[i].config(text=f"Сторона {side_name}: -")
@@ -63,8 +63,8 @@ class InfoPanel:
     def update_cone_info(self, cone_parameters):
         """Обновление информации о конусе"""
         if cone_parameters['volume'] > 0:
-            volume_text = f"Объем конуса: {cone_parameters['volume']:.2f} mm³"
-            params_text = f"Радиус: {cone_parameters['radius_mm']:.2f} mm, Высота: {cone_parameters['height_mm']:.2f} mm"
+            volume_text = f"Объем конуса: {cone_parameters['volume']:.2f} m³"
+            params_text = f"Радиус: {cone_parameters['radius_m']:.2f} m, Высота: {cone_parameters['height_m']:.2f} m"
         else:
             volume_text = "Объем конуса: -"
             params_text = "Параметры конуса: -"
@@ -79,9 +79,9 @@ class InfoPanel:
         except ValueError:
             return 0.1
 
-    def set_pixel_size(self, size_mm):
+    def set_pixel_size(self, size_m):
         """Установка размера пикселя"""
-        self.pixel_size_var.set(str(size_mm))
+        self.pixel_size_var.set(str(size_m))
 
     def pack(self, **kwargs):
         """Упаковка панели"""

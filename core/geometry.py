@@ -11,13 +11,13 @@ def distance_between_points(point1, point2):
     dy = point2[1] - point1[1]
     return math.sqrt(dx*dx + dy*dy)
 
-def calculate_side_length(point1, point2, pixel_size_mm):
+def calculate_side_length(point1, point2, pixel_size_m):
     """
     Расчет длины стороны в пикселях и миллиметрах
     """
     length_pixels = distance_between_points(point1, point2)
-    length_mm = length_pixels * pixel_size_mm
-    return length_pixels, length_mm
+    length_m = length_pixels * pixel_size_m
+    return length_pixels, length_m
 
 def triangle_area(point1, point2, point3):
     """

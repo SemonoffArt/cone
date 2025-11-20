@@ -45,7 +45,7 @@ class TriangleManager:
                 return i
         return None
 
-    def _update_sides(self, pixel_size_mm=0.1):
+    def _update_sides(self, pixel_size_m=0.1):
         """Обновление расчетов сторон"""
         self.sides.clear()
 
@@ -55,11 +55,11 @@ class TriangleManager:
                 point1 = self.vertices[i]
                 point2 = self.vertices[j]
 
-                length_px, length_mm = calculate_side_length(point1, point2, pixel_size_mm)
+                length_px, length_m = calculate_side_length(point1, point2, pixel_size_m)
                 self.sides.append({
                     'points': (point1, point2),
                     'length_px': length_px,
-                    'length_mm': length_mm
+                    'length_m': length_m
                 })
 
     def _notify_listeners(self):

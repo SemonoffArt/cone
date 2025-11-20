@@ -182,7 +182,7 @@ class MainWindow:
 
                     self.canvas.create_text(
                         text_x, text_y,
-                        text=f"{side['length_px']:.1f}px\n({side['length_mm']:.2f}mm)",
+                        text=f"{side['length_px']:.1f}px\n({side['length_m']:.2f}m)",
                         fill=COLOR_TEXT,
                         font=TEXT_FONT,
                         tags="triangle_text"
