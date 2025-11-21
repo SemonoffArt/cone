@@ -52,8 +52,13 @@ class InfoPanel:
         self.pixel_size_entry.pack(side='left', padx=5)
 
         # Кнопка загрузки с Trassir (внешний обработчик устанавливается через set_trassir_callback)
-        self.trassir_button = ttk.Button(self.frame, text="Загрузить с Trassir", command=self._on_trassir_click)
-        self.trassir_button.pack(fill='x', pady=8)
+        self.get_screen_cone_zif1_button = ttk.Button(self.frame, text="Конус ЗИФ1", command=self._on_trassir1_click)
+        self.get_screen_cone_zif1_button.pack(fill='x', pady=8)
+
+        # Кнопка загрузки с Trassir (внешний обработчик устанавливается через set_trassir_callback)
+        self.get_screen_cone_zif2_button = ttk.Button(self.frame, text="Конус ЗИФ2", command=self._on_trassir2_click)
+        self.get_screen_cone_zif2_button.pack(fill='x', pady=8)
+
 
     def update_triangle_info(self, sides_data):
         """Обновление информации о треугольнике"""
@@ -96,18 +101,33 @@ class InfoPanel:
         """Установка размера пикселя"""
         self.pixel_size_var.set(str(size_m))
 
-    def set_trassir_callback(self, callback):
+    def set_trassir1_callback(self, callback):
         """Установить callback для кнопки 'Загрузить с Trassir'"""
-        self._trassir_callback = callback
+        self._trassir1_callback = callback
 
-    def _on_trassir_click(self):
+    def set_trassir2_callback(self, callback):
+        """Установить callback для кнопки 'Загрузить с Trassir2'"""
+        self._trassir2_callback = callback  
+
+    def _on_trassir1_click(self):
         """Вызов внешнего callback при нажатии на кнопку Trassir"""
-        if callable(self._trassir_callback):
+        if callable(self._trassir1_callback):
             try:
-                self._trassir_callback()
+                self._trassir1_callback('ZIF1')
+            except Exception:
+                # Простая защита — не даем упасть приложению при ошибке в callback
+                pass  
+
+    def _on_trassir2_click(self):
+        """Вызов внешнего callback при нажатии на кнопку Trassir"""
+        if callable(self._trassir2_callback):
+            try:
+                self._trassir2_callback('ZIF2')
             except Exception:
                 # Простая защита — не даем упасть приложению при ошибке в callback
                 pass
+    
+            
 
     def pack(self, **kwargs):
         """Упаковка панели"""

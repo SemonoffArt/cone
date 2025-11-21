@@ -13,6 +13,8 @@ from core.cone_calculator import ConeCalculator
 from utils.constants import *
 from utils.config import Config
 from utils.logger import app_logger
+from utils.trassir import Trassir
+from PIL import Image, ImageTk
 
 class MainWindow:
     def __init__(self):
@@ -29,9 +31,11 @@ class MainWindow:
         self.current_image = None
         self.image_path = None
         self.dragging_vertex = None
+        self.trassir_image = None
 
         self._setup_ui()
         self._setup_bindings()
+        self._setup_trassir()
         app_logger.info("Main window initialized successfully")
 
     def _setup_ui(self):
@@ -73,6 +77,27 @@ class MainWindow:
 
         # Обновление при изменении размера пикселя
         self.info_panel.pixel_size_var.trace('w', self.on_pixel_size_changed)
+
+    def _setup_trassir(self):
+        """Настройка подключения к Trassir"""
+        try:
+            self.trassir = Trassir(ip=TRASSIR_IP)
+            # Установка callback для кнопки Trassir в панели информации
+            self.info_panel.set_trassir1_callback(self._on_trassir_click)
+            self.info_panel.set_trassir2_callback(self._on_trassir_click)
+        except Exception as e:
+            app_logger.error(f"Failed to initialize Trassir connection: {e}")
+            self.trassir = None
+
+    def _on_trassir_click(self, button_type='ZIF1'):
+        """Обработка нажатия на кнопку Trassir"""
+        if button_type == 'ZIF1':
+            self._load_trassir_screenshot(CAM_NAME_CONE_ZIF1)
+        elif button_type == 'ZIF2':
+            self._load_trassir_screenshot(CAM_NAME_CONE_ZIF2)
+        else:
+            # По умолчанию загружаем скриншот для ЗИФ1
+            self._load_trassir_screenshot(CAM_NAME_CONE_ZIF1)
 
     def on_canvas_click(self, event):
         """Обработка клика на canvas"""
@@ -232,6 +257,62 @@ class MainWindow:
             except Exception as e:
                 app_logger.error(f"Failed to load image: {str(e)}")
                 messagebox.showerror("Ошибка", f"Не удалось загрузить изображение:\n{str(e)}")
+
+    def _load_trassir_screenshot(self, channel_name):
+        """Загрузка скриншота с Trassir и отображение его в canvas"""
+        app_logger.info(f"Loading Trassir screenshot for channel: {channel_name}")
+        
+        if not self.trassir:
+            app_logger.error("Trassir connection not initialized")
+            messagebox.showerror("Ошибка", "Подключение к Trassir не установлено")
+            return
+        
+        try:
+            # Получаем список каналов
+            self.trassir.update_channels_cache()
+            app_logger.debug(f"Available channels: {len(self.trassir.channels)}")
+            
+            # Извлекаем GUID канала по имени
+            channel_info = self.trassir.get_channel_by_name(channel_name)
+            if not channel_info:
+                app_logger.error(f"Channel not found: {channel_name}")
+                messagebox.showerror("Ошибка", f"Канал не найден: {channel_name}")
+                return
+            
+            channel_guid = channel_info['guid']
+            app_logger.info(f"Found channel {channel_name} with GUID: {channel_guid}")
+            
+            # Получаем скриншот канала
+            screenshot = self.trassir.get_channel_screenshot(channel_guid)
+            if not screenshot:
+                app_logger.error(f"Failed to get screenshot for channel: {channel_name}")
+                messagebox.showerror("Ошибка", f"Не удалось получить скриншот канала: {channel_name}")
+                return
+            
+            # Преобразуем PIL Image в PhotoImage для Tkinter
+            # Масштабируем изображение под размер canvas
+            canvas_width = self.canvas.winfo_width() or CANVAS_WIDTH
+            canvas_height = self.canvas.winfo_height() or CANVAS_HEIGHT
+            
+            # Изменяем размер изображения
+            screenshot = screenshot.resize((canvas_width, canvas_height), Image.Resampling.LANCZOS)
+            self.trassir_image = ImageTk.PhotoImage(screenshot)
+            
+            # Устанавливаем изображение
+            self.current_image = self.trassir_image
+            self.image_path = None  # Не сохраняем путь для Trassir изображений
+            
+            # Очищаем треугольник
+            self.triangle_manager.clear()
+            
+            # Перерисовываем canvas
+            self.redraw_canvas()
+            self.status_var.set(f"Загружен скриншот: {channel_name}")
+            app_logger.info(f"Successfully loaded screenshot for channel: {channel_name}")
+            
+        except Exception as e:
+            app_logger.error(f"Error loading Trassir screenshot: {e}")
+            messagebox.showerror("Ошибка", f"Ошибка при загрузке скриншота:\n{str(e)}")
 
     def clear_triangle(self):
         """Очистка треугольника"""

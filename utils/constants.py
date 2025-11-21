@@ -18,3 +18,9 @@ TEXT_FONT = ("Arial", 10)
 DEFAULT_PIXEL_SIZE_M = 0.001  # размер пикселя в метрах (1 мм = 0.001 м)
 CANVAS_WIDTH = 800
 CANVAS_HEIGHT = 600
+
+# Настройки Trassir
+TRASSIR_ZIF1_IP = "10.100.59.10"
+TRASSIR_ZIF2_IP = "10.100.72.14"
+CAM_NAME_CONE_ZIF1 = "ЗИФ-1 19. Конус Руда"
+CAM_NAME_CONE_ZIF2 = "ККД-2 115. Конус"
