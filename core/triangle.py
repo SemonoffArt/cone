@@ -2,6 +2,7 @@
 Логика работы с треугольником
 """
 from .geometry import calculate_side_length
+from utils.logger import app_logger
 
 
 class TriangleManager:
@@ -12,11 +13,14 @@ class TriangleManager:
 
     def add_vertex(self, x, y):
         """Добавление вершины"""
+        app_logger.debug(f"Adding vertex at ({x}, {y})")
         self.vertices.append((x, y))
         if len(self.vertices) > 3:
-            self.vertices.pop(0)
+            removed = self.vertices.pop(0)
+            app_logger.debug(f"Removed oldest vertex at {removed}")
         self._update_sides()
         self._notify_listeners()
+        app_logger.info(f"Triangle now has {len(self.vertices)} vertices")
 
     def update_vertex(self, index, x, y):
         """Обновление позиции вершины"""
@@ -27,6 +31,7 @@ class TriangleManager:
 
     def clear(self):
         """Очистка треугольника"""
+        app_logger.info("Clearing triangle")
         self.vertices.clear()
         self.sides.clear()
         self._notify_listeners()

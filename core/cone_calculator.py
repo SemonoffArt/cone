@@ -3,6 +3,7 @@
 """
 import math
 from .geometry import triangle_height
+from utils.logger import app_logger
 
 
 class ConeCalculator:
@@ -11,7 +12,9 @@ class ConeCalculator:
         """
         Расчет объема конуса на основе треугольника
         """
+        app_logger.debug(f"Calculating cone volume for vertices: {triangle_vertices}")
         if len(triangle_vertices) != 3:
+            app_logger.warning("Invalid number of vertices for cone calculation")
             return 0
 
         point_a, point_b, point_c = triangle_vertices
@@ -45,8 +48,10 @@ class ConeCalculator:
         # Объем конуса
         if max_height > 0 and radius_mm > 0:
             volume = (1 / 3) * math.pi * radius_mm ** 2 * max_height
+            app_logger.info(f"Calculated cone volume: {volume}")
             return volume
         else:
+            app_logger.warning("Unable to calculate cone volume - invalid dimensions")
             return 0
 
     @staticmethod

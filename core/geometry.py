@@ -2,6 +2,7 @@
 Геометрические расчеты
 """
 import math
+from utils.logger import app_logger
 
 def distance_between_points(point1, point2):
     """
@@ -9,14 +10,17 @@ def distance_between_points(point1, point2):
     """
     dx = point2[0] - point1[0]
     dy = point2[1] - point1[1]
-    return math.sqrt(dx*dx + dy*dy)
+    distance = math.sqrt(dx*dx + dy*dy)
+    app_logger.debug(f"Distance between {point1} and {point2}: {distance}")
+    return distance
 
 def calculate_side_length(point1, point2, pixel_size_m):
     """
-    Расчет длины стороны в пикселях и миллиметрах
+    Расчет длины стороны в пикселях и метрах
     """
     length_pixels = distance_between_points(point1, point2)
     length_m = length_pixels * pixel_size_m
+    app_logger.debug(f"Side length: {length_pixels}px, {length_m}m")
     return length_pixels, length_m
 
 def triangle_area(point1, point2, point3):

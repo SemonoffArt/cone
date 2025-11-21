@@ -12,10 +12,11 @@ from core.triangle import TriangleManager
 from core.cone_calculator import ConeCalculator
 from utils.constants import *
 from utils.config import Config
-
+from utils.logger import app_logger
 
 class MainWindow:
     def __init__(self):
+        app_logger.info("Initializing main window")
         self.root = tk.Tk()
         self.root.title("Cone App - Построение треугольников и расчет конусов")
         self.root.geometry("1200x700")
@@ -31,6 +32,7 @@ class MainWindow:
 
         self._setup_ui()
         self._setup_bindings()
+        app_logger.info("Main window initialized successfully")
 
     def _setup_ui(self):
         """Настройка пользовательского интерфейса"""
@@ -182,7 +184,7 @@ class MainWindow:
 
                     self.canvas.create_text(
                         text_x, text_y,
-                        text=f"{side['length_px']:.1f}px\n({side['length_m']:.2f}m)",
+                        text=f"{side['length_px']:.1f}px\n({side['length_m']:.4f}m)",
                         fill=COLOR_TEXT,
                         font=TEXT_FONT,
                         tags="triangle_text"
@@ -202,6 +204,7 @@ class MainWindow:
 
     def open_image(self):
         """Открытие изображения"""
+        app_logger.info("Opening image dialog")
         file_types = ImageLoader.get_supported_formats()
 
         file_path = filedialog.askopenfilename(
@@ -211,6 +214,7 @@ class MainWindow:
 
         if file_path:
             try:
+                app_logger.info(f"Loading image: {file_path}")
                 self.image_path = file_path
                 self.current_image, image_size = ImageLoader.load_image(
                     file_path,
@@ -223,8 +227,10 @@ class MainWindow:
 
                 self.redraw_canvas()
                 self.status_var.set(f"Загружено: {os.path.basename(file_path)} ({image_size[0]}x{image_size[1]})")
+                app_logger.info(f"Image loaded successfully: {os.path.basename(file_path)} ({image_size[0]}x{image_size[1]})")
 
             except Exception as e:
+                app_logger.error(f"Failed to load image: {str(e)}")
                 messagebox.showerror("Ошибка", f"Не удалось загрузить изображение:\n{str(e)}")
 
     def clear_triangle(self):
