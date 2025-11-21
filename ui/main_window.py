@@ -76,12 +76,12 @@ class MainWindow:
         self.canvas.bind("<Motion>", self.on_canvas_motion)
 
         # Обновление при изменении размера пикселя
-        self.info_panel.pixel_size_var.trace('w', self.on_pixel_size_changed)
+        self.info_panel.pixel_size_var_zif1.trace('w', self.on_pixel_size_changed)
 
-    def _setup_trassir(self):
+    def _setup_trassir(self, trassir_ip='10.100.59.11'):
         """Настройка подключения к Trassir"""
         try:
-            self.trassir = Trassir(ip=TRASSIR_IP)
+            self.trassir = Trassir(ip=trassir_ip)
             # Установка callback для кнопки Trassir в панели информации
             self.info_panel.set_trassir1_callback(self._on_trassir_click)
             self.info_panel.set_trassir2_callback(self._on_trassir_click)
@@ -92,12 +92,23 @@ class MainWindow:
     def _on_trassir_click(self, button_type='ZIF1'):
         """Обработка нажатия на кнопку Trassir"""
         if button_type == 'ZIF1':
-            self._load_trassir_screenshot(CAM_NAME_CONE_ZIF1)
+            # Используем IP и имя канала из конфигурации
+            trassir_ip = CAM_CONE_ZIF1["trassir_ip"]
+            channel_name = CAM_CONE_ZIF1["chanel_name"]
+            self._setup_trassir(trassir_ip)
+            self._load_trassir_screenshot(channel_name)
         elif button_type == 'ZIF2':
-            self._load_trassir_screenshot(CAM_NAME_CONE_ZIF2)
+            # Используем IP и имя канала из конфигурации
+            trassir_ip = CAM_CONE_ZIF2["trassir_ip"]
+            channel_name = CAM_CONE_ZIF2["chanel_name"]
+            self._setup_trassir(trassir_ip)
+            self._load_trassir_screenshot(channel_name)
         else:
             # По умолчанию загружаем скриншот для ЗИФ1
-            self._load_trassir_screenshot(CAM_NAME_CONE_ZIF1)
+            trassir_ip = CAM_CONE_ZIF1["trassir_ip"]
+            channel_name = CAM_CONE_ZIF1["chanel_name"]
+            self._setup_trassir(trassir_ip)
+            self._load_trassir_screenshot(channel_name)
 
     def on_canvas_click(self, event):
         """Обработка клика на canvas"""
