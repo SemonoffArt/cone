@@ -34,7 +34,7 @@ class InfoPanel:
         ttk.Separator(self.frame, orient='horizontal').pack(fill='x', pady=10)
 
         # Информация о конусе
-        self.volume_label = ttk.Label(self.frame, text="Объем конуса: -", font=('Arial', 10, 'bold'))
+        self.volume_label = ttk.Label(self.frame, text="Объем конуса: -", font=('Arial', 15, 'bold'))
         self.volume_label.pack(anchor='w', pady=2)
 
         self.parameters_label = ttk.Label(self.frame, text="Параметры конуса: -")
@@ -42,12 +42,6 @@ class InfoPanel:
 
 
         ttk.Separator(self.frame, orient='horizontal').pack(fill='x', pady=10)
-
-
-
-        # Кнопка загрузки с Trassir (внешний обработчик устанавливается через set_trassir_callback)
-        self.get_screen_cone_zif1_button = ttk.Button(self.frame, text="Конус ЗИФ1", command=self._on_trassir1_click)
-        self.get_screen_cone_zif1_button.pack(fill='x', pady=8)
 
         # Настройка размера пикселя ZIF1
         pixel_frame_zif1 = ttk.Frame(self.frame)
@@ -58,18 +52,17 @@ class InfoPanel:
         self.pixel_size_entry_zif1 = ttk.Entry(pixel_frame_zif1, textvariable=self.pixel_size_var_zif1, width=8)
         self.pixel_size_entry_zif1.pack(side='left', padx=5)
 
+        ttk.Separator(self.frame, orient='horizontal').pack(fill='x', pady=10)
+
+        # Кнопка загрузки с Trassir (внешний обработчик устанавливается через set_trassir_callback)
+        self.get_screen_cone_zif1_button = ttk.Button(self.frame, text="Конус ЗИФ1", command=self._on_trassir1_click)
+        self.get_screen_cone_zif1_button.pack(fill='x', pady=8)
+
         # Кнопка загрузки с Trassir (внешний обработчик устанавливается через set_trassir_callback)
         self.get_screen_cone_zif2_button = ttk.Button(self.frame, text="Конус ЗИФ2", command=self._on_trassir2_click)
         self.get_screen_cone_zif2_button.pack(fill='x', pady=8)
 
-        # Настройка размера пикселя ZIF2
-        pixel_frame_zif2 = ttk.Frame(self.frame)
-        pixel_frame_zif2.pack(fill='x', pady=5)
 
-        ttk.Label(pixel_frame_zif2, text="Размер пикселя (м):").pack(side='left')
-        self.pixel_size_var_zif2 = tk.StringVar(value="0.1")
-        self.pixel_size_entry_zif2 = ttk.Entry(pixel_frame_zif2, textvariable=self.pixel_size_var_zif2, width=8)
-        self.pixel_size_entry_zif2.pack(side='left', padx=5)
 
 
     def update_triangle_info(self, sides_data):

@@ -14,8 +14,17 @@ class Menu:
         self.file_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.file_menu.add_command(label="Открыть", command=self.app.open_image)
         self.file_menu.add_separator()
+        self.file_menu.add_command(label="Конус ЗИФ1", command=self.app.load_cone_zif1)
+        self.file_menu.add_command(label="Конус ЗИФ2", command=self.app.load_cone_zif2)
+        self.file_menu.add_separator()
         self.file_menu.add_command(label="Выход", command=parent.quit)
         self.menu_bar.add_cascade(label="Файл", menu=self.file_menu)
+
+        # Меню "Вид"
+        self.view_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.view_menu.add_command(label="Увеличить", command=self.app.zoom_in)
+        self.view_menu.add_command(label="Уменьшить", command=self.app.zoom_out)
+        self.menu_bar.add_cascade(label="Вид", menu=self.view_menu)
 
         # Меню "Правка"
         self.edit_menu = tk.Menu(self.menu_bar, tearoff=0)
