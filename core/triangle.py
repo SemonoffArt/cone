@@ -50,7 +50,7 @@ class TriangleManager:
                 return i
         return None
 
-    def _update_sides(self, pixel_size_m=0.1):
+    def _update_sides(self, pixel_size_m=0.1, scale_factor=1.0):
         """Обновление расчетов сторон"""
         self.sides.clear()
 
@@ -60,10 +60,18 @@ class TriangleManager:
                 point1 = self.vertices[i]
                 point2 = self.vertices[j]
 
-                length_px, length_m = calculate_side_length(point1, point2, pixel_size_m)
+                # Вычисляем длину в пикселях отображаемого изображения
+                length_px_display, _ = calculate_side_length(point1, point2, pixel_size_m)
+                
+                # Преобразуем в пиксели оригинального изображения
+                length_px_original = length_px_display * scale_factor
+                
+                # Длина в метрах вычисляется по оригинальным пикселям
+                length_m = length_px_original * pixel_size_m
+                
                 self.sides.append({
                     'points': (point1, point2),
-                    'length_px': length_px,
+                    'length_px': length_px_original,
                     'length_m': length_m
                 })
 

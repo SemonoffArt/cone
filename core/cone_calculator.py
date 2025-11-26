@@ -8,7 +8,7 @@ from utils.logger import app_logger
 
 class ConeCalculator:
     @staticmethod
-    def calculate_cone_volume(triangle_vertices, pixel_size_m):
+    def calculate_cone_volume(triangle_vertices, pixel_size_m, scale_factor=1.0):
         """
         Расчет объема конуса на основе треугольника
         """
@@ -30,13 +30,17 @@ class ConeCalculator:
         base_length_mm = 0
 
         for base_p1, base_p2, opposite in sides:
-            # Длина основания в мм
-            base_length_px = ((base_p2[0] - base_p1[0]) ** 2 + (base_p2[1] - base_p1[1]) ** 2) ** 0.5
-            current_base_length_m = base_length_px * pixel_size_m
+            # Длина основания в пикселях отображаемого изображения
+            base_length_px_display = ((base_p2[0] - base_p1[0]) ** 2 + (base_p2[1] - base_p1[1]) ** 2) ** 0.5
+            # Преобразуем в пиксели оригинала
+            base_length_px_original = base_length_px_display * scale_factor
+            current_base_length_m = base_length_px_original * pixel_size_m
 
             # Высота треугольника
-            current_height_px = triangle_height(base_p1, base_p2, opposite)
-            current_height_mm = current_height_px * pixel_size_m
+            current_height_px_display = triangle_height(base_p1, base_p2, opposite)
+            # Преобразуем в пиксели оригинала
+            current_height_px_original = current_height_px_display * scale_factor
+            current_height_mm = current_height_px_original * pixel_size_m
 
             if current_height_mm > max_height:
                 max_height = current_height_mm
@@ -55,22 +59,26 @@ class ConeCalculator:
             return 0
 
     @staticmethod
-    def get_cone_parameters(triangle_vertices, pixel_size_m):
+    def get_cone_parameters(triangle_vertices, pixel_size_m, scale_factor=1.0):
         """
         Получение параметров конуса
         """
-        volume = ConeCalculator.calculate_cone_volume(triangle_vertices, pixel_size_m)
+        volume = ConeCalculator.calculate_cone_volume(triangle_vertices, pixel_size_m, scale_factor)
 
         # Находим основание и высоту для отображения
         if len(triangle_vertices) == 3:
             point_a, point_b, point_c = triangle_vertices
-            base_length_px = max([
+            
+            # Длины в пикселях отображаемого изображения
+            base_length_px_display = max([
                 ((point_b[0] - point_a[0]) ** 2 + (point_b[1] - point_a[1]) ** 2) ** 0.5,
                 ((point_c[0] - point_b[0]) ** 2 + (point_c[1] - point_b[1]) ** 2) ** 0.5,
                 ((point_a[0] - point_c[0]) ** 2 + (point_a[1] - point_c[1]) ** 2) ** 0.5
             ])
-
-            base_length_m= base_length_px * pixel_size_m
+            
+            # Преобразуем в пиксели оригинала
+            base_length_px_original = base_length_px_display * scale_factor
+            base_length_m = base_length_px_original * pixel_size_m
             radius_m = base_length_m / 2
 
             # Приблизительная высота (можно улучшить)

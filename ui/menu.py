@@ -13,6 +13,7 @@ class Menu:
         # Меню "Файл"
         self.file_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.file_menu.add_command(label="Открыть", command=self.app.open_image)
+        self.file_menu.add_command(label="Сохранить", command=self.app.save_image)
         self.file_menu.add_separator()
         self.file_menu.add_command(label="Конус ЗИФ1", command=self.app.load_cone_zif1)
         self.file_menu.add_command(label="Конус ЗИФ2", command=self.app.load_cone_zif2)
