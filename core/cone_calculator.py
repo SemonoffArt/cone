@@ -19,32 +19,23 @@ class ConeCalculator:
 
         point_a, point_b, point_c = triangle_vertices
 
-        # Находим самую длинную сторону как основание
-        sides = [
-            (point_a, point_b, point_c),
-            (point_b, point_c, point_a),
-            (point_c, point_a, point_b)
-        ]
+        # Основание конуса - это всегда первые две точки (AB)
+        # Третья точка (C) - это вершина конуса
+        base_p1 = point_a
+        base_p2 = point_b
+        apex = point_c
+        
+        # Длина основания в пикселях отображаемого изображения
+        base_length_px_display = ((base_p2[0] - base_p1[0]) ** 2 + (base_p2[1] - base_p1[1]) ** 2) ** 0.5
+        # Преобразуем в пиксели оригинала
+        base_length_px_original = base_length_px_display * scale_factor
+        base_length_mm = base_length_px_original * pixel_size_m
 
-        max_height = 0
-        base_length_mm = 0
-
-        for base_p1, base_p2, opposite in sides:
-            # Длина основания в пикселях отображаемого изображения
-            base_length_px_display = ((base_p2[0] - base_p1[0]) ** 2 + (base_p2[1] - base_p1[1]) ** 2) ** 0.5
-            # Преобразуем в пиксели оригинала
-            base_length_px_original = base_length_px_display * scale_factor
-            current_base_length_m = base_length_px_original * pixel_size_m
-
-            # Высота треугольника
-            current_height_px_display = triangle_height(base_p1, base_p2, opposite)
-            # Преобразуем в пиксели оригинала
-            current_height_px_original = current_height_px_display * scale_factor
-            current_height_mm = current_height_px_original * pixel_size_m
-
-            if current_height_mm > max_height:
-                max_height = current_height_mm
-                base_length_mm = current_base_length_m
+        # Высота треугольника от основания AB до вершины C
+        max_height_px_display = triangle_height(base_p1, base_p2, apex)
+        # Преобразуем в пиксели оригинала
+        max_height_px_original = max_height_px_display * scale_factor
+        max_height = max_height_px_original * pixel_size_m
 
         # Радиус основания конуса - половина длины основания треугольника
         radius_mm = base_length_mm / 2
@@ -69,20 +60,23 @@ class ConeCalculator:
         if len(triangle_vertices) == 3:
             point_a, point_b, point_c = triangle_vertices
             
-            # Длины в пикселях отображаемого изображения
-            base_length_px_display = max([
-                ((point_b[0] - point_a[0]) ** 2 + (point_b[1] - point_a[1]) ** 2) ** 0.5,
-                ((point_c[0] - point_b[0]) ** 2 + (point_c[1] - point_b[1]) ** 2) ** 0.5,
-                ((point_a[0] - point_c[0]) ** 2 + (point_a[1] - point_c[1]) ** 2) ** 0.5
-            ])
+            # Основание конуса - это всегда первые две точки (AB)
+            base_p1 = point_a
+            base_p2 = point_b
+            apex = point_c
+            
+            # Длина основания в пикселях отображаемого изображения
+            base_length_px_display = ((base_p2[0] - base_p1[0]) ** 2 + (base_p2[1] - base_p1[1]) ** 2) ** 0.5
             
             # Преобразуем в пиксели оригинала
             base_length_px_original = base_length_px_display * scale_factor
             base_length_m = base_length_px_original * pixel_size_m
             radius_m = base_length_m / 2
 
-            # Приблизительная высота (можно улучшить)
-            height_m = (volume * 3) / (math.pi * radius_m ** 2) if radius_m > 0 else 0
+            # Высота треугольника от основания AB до вершины C
+            height_px_display = triangle_height(base_p1, base_p2, apex)
+            height_px_original = height_px_display * scale_factor
+            height_m = height_px_original * pixel_size_m
 
             return {
                 'volume': volume,

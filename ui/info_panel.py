@@ -111,7 +111,7 @@ class InfoPanel:
         if cone_parameters['volume'] > 0:
             volume_text = f"Объем: {cone_parameters['volume']:.2f} m³"
             params_text = f"Радиус: {cone_parameters['radius_m']:.2f} m, Высота: {cone_parameters['height_m']:.2f} m"
-            app_logger.info(f"Cone calculated - Volume: {cone_parameters['volume']:.2f} m³")
+            # app_logger.info(f"Cone calculated - Volume: {cone_parameters['volume']:.2f} m³")
         else:
             volume_text = "Объем: -"
             params_text = "Параметры конуса: -"
