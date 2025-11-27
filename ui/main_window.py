@@ -359,9 +359,6 @@ class MainWindow:
                 self.base_image_size = image_size
                 self.current_image_size = image_size
 
-                # Очищаем треугольник при загрузке нового изображения
-                self.triangle_manager.clear()
-
                 self.redraw_canvas()
                 self.status_var.set(
                     f"Загружено: {os.path.basename(file_path)} ({image_size[0]}x{image_size[1]})")
@@ -487,9 +484,6 @@ class MainWindow:
             # Устанавливаем изображение
             self.current_image = self.trassir_image
             self.image_path = None  # Не сохраняем путь для Trassir изображений
-
-            # Очищаем треугольник
-            self.triangle_manager.clear()
 
             # Устанавливаем размер пикселя если был передан
             if pixel_size_m is not None:
