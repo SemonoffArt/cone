@@ -16,6 +16,7 @@ from utils.logger import app_logger
 from utils.trassir import Trassir
 from PIL import Image, ImageTk
 
+
 class MainWindow:
     def __init__(self):
         app_logger.info("Initializing main window")
@@ -34,7 +35,8 @@ class MainWindow:
         self.trassir_image = None
         self.zoom_level = 1.0
         self.original_pil_image = None  # Сохраняем оригинальное изображение PIL
-        self.base_image_size = None  # Базовый размер изображения (при zoom=1.0)
+        # Базовый размер изображения (при zoom=1.0)
+        self.base_image_size = None
         self.current_image_size = None  # Текущий размер отображаемого изображения
         self.original_image_size = None  # Размер оригинального изображения
 
@@ -42,7 +44,7 @@ class MainWindow:
         self._setup_bindings()
         self._setup_trassir()
         app_logger.info("Main window initialized successfully")
-        
+
         # Автоматическая загрузка скриншота Конус ЗИФ1 при запуске
         self.root.after(500, self.load_cone_zif1)
 
@@ -62,7 +64,7 @@ class MainWindow:
         # Создаем полосы прокрутки
         self.h_scrollbar = tk.Scrollbar(image_frame, orient='horizontal')
         self.h_scrollbar.pack(side='bottom', fill='x')
-        
+
         self.v_scrollbar = tk.Scrollbar(image_frame, orient='vertical')
         self.v_scrollbar.pack(side='right', fill='y')
 
@@ -75,7 +77,7 @@ class MainWindow:
             yscrollcommand=self.v_scrollbar.set
         )
         self.canvas.pack(side='left', fill='both', expand=True, padx=5, pady=5)
-        
+
         # Привязываем полосы прокрутки к canvas
         self.h_scrollbar.config(command=self.canvas.xview)
         self.v_scrollbar.config(command=self.canvas.yview)
@@ -86,7 +88,8 @@ class MainWindow:
 
         # Статус бар
         self.status_var = tk.StringVar(value="Готов к работе")
-        status_bar = ttk.Label(self.root, textvariable=self.status_var, relief='sunken')
+        status_bar = ttk.Label(
+            self.root, textvariable=self.status_var, relief='sunken')
         status_bar.pack(side='bottom', fill='x')
 
     def _setup_bindings(self):
@@ -97,15 +100,19 @@ class MainWindow:
         self.canvas.bind("<Motion>", self.on_canvas_motion)
 
         # Обновление при изменении размера пикселя
-        self.info_panel.pixel_size_var_zif1.trace('w', self.on_pixel_size_changed)
-        
+        self.info_panel.pixel_size_var_zif1.trace(
+            'w', self.on_pixel_size_changed)
+
         # Горячие клавиши для масштабирования
         self.root.bind("<plus>", lambda e: self.zoom_in())  # +
-        self.root.bind("<equal>", lambda e: self.zoom_in())  # = (тоже + без Shift)
+        # = (тоже + без Shift)
+        self.root.bind("<equal>", lambda e: self.zoom_in())
         self.root.bind("<minus>", lambda e: self.zoom_out())  # -
-        self.root.bind("<KP_Add>", lambda e: self.zoom_in())  # + на цифровой клавиатуре
-        self.root.bind("<KP_Subtract>", lambda e: self.zoom_out())  # - на цифровой клавиатуре
-        
+        # + на цифровой клавиатуре
+        self.root.bind("<KP_Add>", lambda e: self.zoom_in())
+        # - на цифровой клавиатуре
+        self.root.bind("<KP_Subtract>", lambda e: self.zoom_out())
+
         # Обработка изменения размера окна
         self.canvas.bind("<Configure>", self.on_canvas_resize)
 
@@ -155,7 +162,8 @@ class MainWindow:
         canvas_y = self.canvas.canvasy(event.y)
 
         # Проверяем, не кликаем ли на существующую вершину
-        vertex_index = self.triangle_manager.get_vertex_at_position(canvas_x, canvas_y)
+        vertex_index = self.triangle_manager.get_vertex_at_position(
+            canvas_x, canvas_y)
         if vertex_index is not None:
             self.dragging_vertex = vertex_index
             return
@@ -165,9 +173,11 @@ class MainWindow:
         self.redraw_canvas()
 
         if self.triangle_manager.is_complete():
-            self.status_var.set("Треугольник построен. Можно перемещать вершины")
+            self.status_var.set(
+                "Треугольник построен. Можно перемещать вершины")
         else:
-            self.status_var.set(f"Добавлена вершина {len(self.triangle_manager.vertices)}/3")
+            self.status_var.set(
+                f"Добавлена вершина {len(self.triangle_manager.vertices)}/3")
 
     def on_canvas_drag(self, event):
         """Обработка перетаскивания на canvas"""
@@ -175,7 +185,8 @@ class MainWindow:
             # Преобразуем координаты с учетом прокрутки
             canvas_x = self.canvas.canvasx(event.x)
             canvas_y = self.canvas.canvasy(event.y)
-            self.triangle_manager.update_vertex(self.dragging_vertex, canvas_x, canvas_y)
+            self.triangle_manager.update_vertex(
+                self.dragging_vertex, canvas_x, canvas_y)
             self.redraw_canvas()
 
     def on_canvas_release(self, event):
@@ -192,7 +203,8 @@ class MainWindow:
         canvas_y = self.canvas.canvasy(event.y)
 
         # Изменение курсора при наведении на вершину
-        vertex_index = self.triangle_manager.get_vertex_at_position(canvas_x, canvas_y)
+        vertex_index = self.triangle_manager.get_vertex_at_position(
+            canvas_x, canvas_y)
         if vertex_index is not None:
             self.canvas.config(cursor="hand2")
         else:
@@ -213,7 +225,7 @@ class MainWindow:
         """Обработка изменения размера canvas"""
         if not self.original_pil_image:
             return
-        
+
         # Проверяем, что размер действительно изменился
         if event.width > 1 and event.height > 1:
             # Пересчитываем базовый размер и применяем текущий zoom
@@ -225,11 +237,12 @@ class MainWindow:
 
         # Обновление информации
         pixel_size = self.info_panel.get_pixel_size()
-        
+
         # Вычисляем коэффициент масштаба (от отображаемого к оригиналу)
         scale_factor = 1.0
         if self.original_image_size and self.current_image_size:
-            scale_factor = self.original_image_size[0] / self.current_image_size[0]
+            scale_factor = self.original_image_size[0] / \
+                self.current_image_size[0]
 
         # Обновление информации о треугольниках с учетом масштаба
         self.triangle_manager._update_sides(pixel_size, scale_factor)
@@ -250,7 +263,8 @@ class MainWindow:
 
         # Отображение изображения
         if self.current_image:
-            self.canvas.create_image(0, 0, anchor='nw', image=self.current_image)
+            self.canvas.create_image(
+                0, 0, anchor='nw', image=self.current_image)
             # Устанавливаем область прокрутки
             self.canvas.config(scrollregion=self.canvas.bbox("all"))
 
@@ -324,22 +338,23 @@ class MainWindow:
             try:
                 app_logger.info(f"Loading image: {file_path}")
                 self.image_path = file_path
-                
+
                 # Загружаем оригинальное изображение
                 from PIL import Image
                 self.original_pil_image = Image.open(file_path)
                 self.original_image_size = self.original_pil_image.size  # Сохраняем размер оригинала
                 self.zoom_level = 1.0
-                
+
                 # Масштабируем для первоначального отображения
                 canvas_width = self.canvas.winfo_width() or CANVAS_WIDTH
                 canvas_height = self.canvas.winfo_height() or CANVAS_HEIGHT
-                
+
                 display_image = self.original_pil_image.copy()
-                display_image.thumbnail((canvas_width, canvas_height), Image.Resampling.LANCZOS)
+                display_image.thumbnail(
+                    (canvas_width, canvas_height), Image.Resampling.LANCZOS)
                 self.current_image = ImageTk.PhotoImage(display_image)
                 image_size = display_image.size
-                
+
                 # Сохраняем базовый и текущий размеры
                 self.base_image_size = image_size
                 self.current_image_size = image_size
@@ -348,21 +363,28 @@ class MainWindow:
                 self.triangle_manager.clear()
 
                 self.redraw_canvas()
-                self.status_var.set(f"Загружено: {os.path.basename(file_path)} ({image_size[0]}x{image_size[1]})")
-                app_logger.info(f"Image loaded successfully: {os.path.basename(file_path)} ({image_size[0]}x{image_size[1]})")
+                self.status_var.set(
+                    f"Загружено: {os.path.basename(file_path)} ({image_size[0]}x{image_size[1]})")
+                app_logger.info(
+                    f"Image loaded successfully: {os.path.basename(file_path)} ({image_size[0]}x{image_size[1]})")
+
+                # Обновляем информацию об изображении
+                self._update_image_info()
 
             except Exception as e:
                 app_logger.error(f"Failed to load image: {str(e)}")
-                messagebox.showerror("Ошибка", f"Не удалось загрузить изображение:\n{str(e)}")
+                messagebox.showerror(
+                    "Ошибка", f"Не удалось загрузить изображение:\n{str(e)}")
 
     def save_image(self):
         """Сохранение текущего изображения"""
         if not self.original_pil_image:
-            messagebox.showwarning("Предупреждение", "Нет загруженного изображения для сохранения")
+            messagebox.showwarning(
+                "Предупреждение", "Нет загруженного изображения для сохранения")
             return
-        
+
         app_logger.info("Opening save image dialog")
-        
+
         # Определяем формат по умолчанию
         default_extension = ".png"
         if self.image_path:
@@ -374,7 +396,7 @@ class MainWindow:
             from datetime import datetime
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             default_name = f"screenshot_{timestamp}.png"
-        
+
         # Диалог сохранения
         file_path = filedialog.asksaveasfilename(
             title="Сохранить изображение",
@@ -389,118 +411,136 @@ class MainWindow:
                 ("Все файлы", "*.*")
             ]
         )
-        
+
         if file_path:
             try:
                 app_logger.info(f"Saving image to: {file_path}")
                 # Сохраняем оригинальное изображение в исходном разрешении
                 self.original_pil_image.save(file_path)
-                self.status_var.set(f"Изображение сохранено: {os.path.basename(file_path)}")
+                self.status_var.set(
+                    f"Изображение сохранено: {os.path.basename(file_path)}")
                 app_logger.info(f"Image saved successfully: {file_path}")
-                messagebox.showinfo("Успех", f"Изображение сохранено:\n{file_path}")
+                messagebox.showinfo(
+                    "Успех", f"Изображение сохранено:\n{file_path}")
             except Exception as e:
                 app_logger.error(f"Failed to save image: {str(e)}")
-                messagebox.showerror("Ошибка", f"Не удалось сохранить изображение:\n{str(e)}")
+                messagebox.showerror(
+                    "Ошибка", f"Не удалось сохранить изображение:\n{str(e)}")
 
     def _load_trassir_screenshot(self, channel_name, pixel_size_m=None):
         """Загрузка скриншота с Trassir и отображение его в canvas"""
-        app_logger.info(f"Loading Trassir screenshot for channel: {channel_name}")
-        
+        app_logger.info(
+            f"Loading Trassir screenshot for channel: {channel_name}")
+
         if not self.trassir:
             app_logger.error("Trassir connection not initialized")
-            messagebox.showerror("Ошибка", "Подключение к Trassir не установлено")
+            messagebox.showerror(
+                "Ошибка", "Подключение к Trassir не установлено")
             return
-        
+
         try:
             # Получаем список каналов
             self.trassir.update_channels_cache()
-            app_logger.debug(f"Available channels: {len(self.trassir.channels)}")
-            
+            app_logger.debug(
+                f"Available channels: {len(self.trassir.channels)}")
+
             # Извлекаем GUID канала по имени
             channel_info = self.trassir.get_channel_by_name(channel_name)
             if not channel_info:
                 app_logger.error(f"Channel not found: {channel_name}")
-                messagebox.showerror("Ошибка", f"Канал не найден: {channel_name}")
+                messagebox.showerror(
+                    "Ошибка", f"Канал не найден: {channel_name}")
                 return
-            
+
             channel_guid = channel_info['guid']
-            app_logger.info(f"Found channel {channel_name} with GUID: {channel_guid}")
-            
+            app_logger.info(
+                f"Found channel {channel_name} with GUID: {channel_guid}")
+
             # Получаем скриншот канала
             screenshot = self.trassir.get_channel_screenshot(channel_guid)
             if not screenshot:
-                app_logger.error(f"Failed to get screenshot for channel: {channel_name}")
-                messagebox.showerror("Ошибка", f"Не удалось получить скриншот канала: {channel_name}")
+                app_logger.error(
+                    f"Failed to get screenshot for channel: {channel_name}")
+                messagebox.showerror(
+                    "Ошибка", f"Не удалось получить скриншот канала: {channel_name}")
                 return
-            
+
             # Преобразуем PIL Image в PhotoImage для Tkinter
             # Масштабируем изображение под размер canvas
             canvas_width = self.canvas.winfo_width() or CANVAS_WIDTH
             canvas_height = self.canvas.winfo_height() or CANVAS_HEIGHT
-            
+
             # Сохраняем оригинальное изображение
             self.original_pil_image = screenshot.copy()
             self.original_image_size = self.original_pil_image.size  # Сохраняем размер оригинала
             self.zoom_level = 1.0
-            
+
             # Изменяем размер изображения
-            screenshot = screenshot.resize((canvas_width, canvas_height), Image.Resampling.LANCZOS)
+            screenshot = screenshot.resize(
+                (canvas_width, canvas_height), Image.Resampling.LANCZOS)
             self.trassir_image = ImageTk.PhotoImage(screenshot)
-            
+
             # Сохраняем базовый и текущий размеры
             self.base_image_size = (canvas_width, canvas_height)
             self.current_image_size = (canvas_width, canvas_height)
-            
+
             # Устанавливаем изображение
             self.current_image = self.trassir_image
             self.image_path = None  # Не сохраняем путь для Trassir изображений
-            
+
             # Очищаем треугольник
             self.triangle_manager.clear()
-            
+
             # Устанавливаем размер пикселя если был передан
             if pixel_size_m is not None:
                 self.info_panel.set_pixel_size(pixel_size_m)
                 self.config.set_pixel_size(pixel_size_m)
                 self.triangle_manager._update_sides(pixel_size_m)
-            
+
             # Перерисовываем canvas
             self.redraw_canvas()
             self.status_var.set(f"Загружен скриншот: {channel_name}")
-            app_logger.info(f"Successfully loaded screenshot for channel: {channel_name}")
-            
+            app_logger.info(
+                f"Successfully loaded screenshot for channel: {channel_name}")
+
+            # Обновляем информацию об изображении
+            self._update_image_info()
+
         except Exception as e:
             app_logger.error(f"Error loading Trassir screenshot: {e}")
-            messagebox.showerror("Ошибка", f"Ошибка при загрузке скриншота:\n{str(e)}")
+            messagebox.showerror(
+                "Ошибка", f"Ошибка при загрузке скриншота:\n{str(e)}")
 
     def zoom_in(self):
         """Увеличение изображения"""
         if not self.original_pil_image:
             self.status_var.set("Сначала загрузите изображение")
             return
-        
+
         self.zoom_level *= 1.2  # Увеличение на 20%
         self._apply_zoom()
         app_logger.info(f"Zoom in: {self.zoom_level:.2f}x")
         self.status_var.set(f"Масштаб: {self.zoom_level:.2f}x")
+        self._update_image_info()  # Обновляем информацию
 
     def zoom_out(self):
         """Уменьшение изображения"""
         if not self.original_pil_image:
             self.status_var.set("Сначала загрузите изображение")
             return
-        
+
         if self.zoom_level > 0.2:  # Минимальный зум 20%
             self.zoom_level /= 1.2  # Уменьшение на 20%
             self._apply_zoom()
             app_logger.info(f"Zoom out: {self.zoom_level:.2f}x")
             self.status_var.set(f"Масштаб: {self.zoom_level:.2f}x")
+            self._update_image_info()  # Обновляем информацию
 
     def _apply_zoom(self):
         """Применение масштабирования к изображению"""
         if not self.original_pil_image or not self.base_image_size:
             return
-        
+
         # Сохраняем текущие вершины треугольника в относительных координатах (0-1)
         if self.current_image_size and len(self.triangle_manager.vertices) > 0:
             relative_vertices = []
@@ -510,30 +550,32 @@ class MainWindow:
                 relative_vertices.append((rel_x, rel_y))
         else:
             relative_vertices = []
-        
+
         # Вычисляем новый размер
         new_width = int(self.base_image_size[0] * self.zoom_level)
         new_height = int(self.base_image_size[1] * self.zoom_level)
-        
+
         # Создаем масштабированное изображение
         # Сначала масштабируем оригинал до базового размера, затем применяем zoom
         canvas_width = self.canvas.winfo_width() or CANVAS_WIDTH
         canvas_height = self.canvas.winfo_height() or CANVAS_HEIGHT
-        
+
         # Получаем изображение, масштабированное до базового размера
         img_copy = self.original_pil_image.copy()
-        img_copy.thumbnail((canvas_width, canvas_height), Image.Resampling.LANCZOS)
-        
+        img_copy.thumbnail((canvas_width, canvas_height),
+                           Image.Resampling.LANCZOS)
+
         # Теперь применяем zoom к этому размеру
         zoomed_width = int(img_copy.width * self.zoom_level)
         zoomed_height = int(img_copy.height * self.zoom_level)
-        
-        zoomed_image = self.original_pil_image.resize((zoomed_width, zoomed_height), Image.Resampling.LANCZOS)
+
+        zoomed_image = self.original_pil_image.resize(
+            (zoomed_width, zoomed_height), Image.Resampling.LANCZOS)
         self.current_image = ImageTk.PhotoImage(zoomed_image)
-        
+
         # Обновляем текущий размер
         self.current_image_size = (zoomed_width, zoomed_height)
-        
+
         # Восстанавливаем вершины треугольника в новых координатах
         if relative_vertices:
             new_vertices = []
@@ -541,15 +583,17 @@ class MainWindow:
                 new_x = rel_x * self.current_image_size[0]
                 new_y = rel_y * self.current_image_size[1]
                 new_vertices.append((new_x, new_y))
-            
+
             # Обновляем вершины без уведомления слушателей
             self.triangle_manager.vertices = new_vertices
             # Вычисляем коэффициент масштаба
             scale_factor = 1.0
             if self.original_image_size and self.current_image_size:
-                scale_factor = self.original_image_size[0] / self.current_image_size[0]
-            self.triangle_manager._update_sides(self.info_panel.get_pixel_size(), scale_factor)
-        
+                scale_factor = self.original_image_size[0] / \
+                    self.current_image_size[0]
+            self.triangle_manager._update_sides(
+                self.info_panel.get_pixel_size(), scale_factor)
+
         # Перерисовываем
         self.redraw_canvas()
 
@@ -557,7 +601,7 @@ class MainWindow:
         """Перерасчет размера изображения при изменении размера окна"""
         if not self.original_pil_image:
             return
-        
+
         # Сохраняем текущие вершины в относительных координатах
         if self.current_image_size and len(self.triangle_manager.vertices) > 0:
             relative_vertices = []
@@ -567,31 +611,33 @@ class MainWindow:
                 relative_vertices.append((rel_x, rel_y))
         else:
             relative_vertices = []
-        
+
         # Получаем новый размер canvas
         canvas_width = self.canvas.winfo_width()
         canvas_height = self.canvas.winfo_height()
-        
+
         if canvas_width <= 1 or canvas_height <= 1:
             return
-        
+
         # Вычисляем новый базовый размер
         img_copy = self.original_pil_image.copy()
-        img_copy.thumbnail((canvas_width, canvas_height), Image.Resampling.LANCZOS)
-        
+        img_copy.thumbnail((canvas_width, canvas_height),
+                           Image.Resampling.LANCZOS)
+
         # Обновляем базовый размер
         self.base_image_size = img_copy.size
-        
+
         # Применяем текущий zoom
         zoomed_width = int(self.base_image_size[0] * self.zoom_level)
         zoomed_height = int(self.base_image_size[1] * self.zoom_level)
-        
-        zoomed_image = self.original_pil_image.resize((zoomed_width, zoomed_height), Image.Resampling.LANCZOS)
+
+        zoomed_image = self.original_pil_image.resize(
+            (zoomed_width, zoomed_height), Image.Resampling.LANCZOS)
         self.current_image = ImageTk.PhotoImage(zoomed_image)
-        
+
         # Обновляем текущий размер
         self.current_image_size = (zoomed_width, zoomed_height)
-        
+
         # Восстанавливаем вершины в новых координатах
         if relative_vertices:
             new_vertices = []
@@ -599,17 +645,43 @@ class MainWindow:
                 new_x = rel_x * self.current_image_size[0]
                 new_y = rel_y * self.current_image_size[1]
                 new_vertices.append((new_x, new_y))
-            
+
             # Обновляем вершины
             self.triangle_manager.vertices = new_vertices
             # Вычисляем коэффициент масштаба
             scale_factor = 1.0
             if self.original_image_size and self.current_image_size:
-                scale_factor = self.original_image_size[0] / self.current_image_size[0]
-            self.triangle_manager._update_sides(self.info_panel.get_pixel_size(), scale_factor)
-        
+                scale_factor = self.original_image_size[0] / \
+                    self.current_image_size[0]
+            self.triangle_manager._update_sides(
+                self.info_panel.get_pixel_size(), scale_factor)
+
         # Перерисовываем
         self.redraw_canvas()
+
+    def _update_image_info(self):
+        """Обновление информации об изображении в панели"""
+        if not self.original_pil_image:
+            return
+
+        # Определяем формат
+        image_format = self.original_pil_image.format if self.original_pil_image.format else "Unknown"
+
+        # Определяем источник
+        if self.image_path:
+            source = os.path.basename(self.image_path)
+        else:
+            source = "Trassir скриншот"
+
+        image_info = {
+            'original_size': self.original_image_size,
+            'display_size': self.current_image_size,
+            'format': image_format,
+            'source': source,
+            'zoom_level': self.zoom_level
+        }
+
+        self.info_panel.update_image_info(image_info)
 
     def clear_triangle(self):
         """Очистка треугольника"""
