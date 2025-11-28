@@ -33,6 +33,9 @@ class InfoPanel:
 
         self.parameters_label = ttk.Label(self.frame, text="Параметры конуса: -")
         self.parameters_label.pack(anchor='w', pady=2)
+        
+        # Формула расчета объема конуса
+        ttk.Label(self.frame, text="Формула: V = ⅓πR²h", font=('Arial', 9, 'italic')).pack(anchor='w', pady=(5, 0))
 
         ttk.Separator(self.frame, orient='horizontal').pack(fill='x', pady=10)
 

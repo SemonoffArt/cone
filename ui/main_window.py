@@ -367,6 +367,9 @@ class MainWindow:
 
                 # Обновляем информацию об изображении
                 self._update_image_info()
+                
+                # Подстраиваем размер окна под изображение (масштаб 100%)
+                self._adjust_window_size()
 
             except Exception as e:
                 app_logger.error(f"Failed to load image: {str(e)}")
@@ -499,6 +502,9 @@ class MainWindow:
 
             # Обновляем информацию об изображении
             self._update_image_info()
+            
+            # Подстраиваем размер окна под изображение (масштаб 100%)
+            self._adjust_window_size()
 
         except Exception as e:
             app_logger.error(f"Error loading Trassir screenshot: {e}")
@@ -676,6 +682,35 @@ class MainWindow:
         }
 
         self.info_panel.update_image_info(image_info)
+
+    def _adjust_window_size(self):
+        """Подстраивание размера окна под размер изображения при масштабе 100%"""
+        if not self.original_image_size:
+            return
+        
+        # Получаем параметры экрана
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        
+        # Не делаем окно больше 70% экрана
+        max_window_width = int(screen_width * 0.7)
+        max_window_height = int(screen_height * 0.7)
+        
+        # Оригинальные размеры изображения
+        img_width, img_height = self.original_image_size
+        
+        # Нужные значения для размера окна
+        # Добавляем место для панели информации (правая сторона, около 250 пикселей)
+        canvas_width = min(img_width, max_window_width - 300)
+        canvas_height = min(img_height, max_window_height - 100)  # 100 для меню и статус бара
+        
+        # Общие размеры окна
+        window_width = canvas_width + 320  # +320 для панели
+        window_height = canvas_height + 100  # +100 для меню и статуса
+        
+        # Устанавливаем новые размеры
+        self.root.geometry(f"{window_width}x{window_height}")
+        app_logger.info(f"Window resized to {window_width}x{window_height} for image {img_width}x{img_height}")
 
     def clear_triangle(self):
         """Очистка треугольника"""
