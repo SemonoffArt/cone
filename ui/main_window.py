@@ -6,6 +6,7 @@ from tkinter import ttk, messagebox, filedialog
 import os
 
 from .menu import Menu
+from .toolbar import Toolbar
 from .info_panel import InfoPanel
 from core.image_loader import ImageLoader
 from core.triangle import TriangleManager
@@ -54,7 +55,8 @@ class MainWindow:
         self.menu = Menu(self.root, self)
 
         # Панель инструментов (Toolbar)
-        self._setup_toolbar()
+        self.toolbar = Toolbar(self.root, self)
+        self.toolbar.pack(side='top', fill='x', padx=5, pady=5)
 
         # Основной фрейм
         main_frame = ttk.Frame(self.root)
@@ -94,95 +96,6 @@ class MainWindow:
         status_bar = ttk.Label(
             self.root, textvariable=self.status_var, relief='sunken')
         status_bar.pack(side='bottom', fill='x')
-
-    def _setup_toolbar(self):
-        """Настройка панели инструментов"""
-        # Сохраняем ссылки на иконки для использования в методе
-        self.toolbar_icons = {}
-        
-        toolbar = ttk.Frame(self.root)
-        toolbar.pack(side='top', fill='x', padx=5, pady=5)
-        
-        icon_dir = "./resources/icons"
-        
-        # Файл - Открыть
-        try:
-            icon = tk.PhotoImage(file=f"{icon_dir}/document-open.png")
-            self.toolbar_icons['open'] = icon
-            btn = ttk.Button(toolbar, image=icon, command=self.open_image)
-            btn.pack(side='left', padx=2)
-            btn.image = icon  # От утечки
-        except Exception as e:
-            app_logger.warning(f"Failed to load document-open.png: {e}")
-        
-        # Файл - Сохранить
-        try:
-            icon = tk.PhotoImage(file=f"{icon_dir}/document-save.png")
-            self.toolbar_icons['save'] = icon
-            btn = ttk.Button(toolbar, image=icon, command=self.save_image)
-            btn.pack(side='left', padx=2)
-            btn.image = icon
-        except Exception as e:
-            app_logger.warning(f"Failed to load document-save.png: {e}")
-        
-        # Сепаратор
-        ttk.Separator(toolbar, orient='vertical').pack(side='left', fill='y', padx=5)
-        
-        # Файл - Конус ЗИФ1
-        try:
-            icon = tk.PhotoImage(file=f"{icon_dir}/camera-photo.png")
-            self.toolbar_icons['zif1'] = icon
-            btn = ttk.Button(toolbar, image=icon, command=lambda: self._on_trassir_click('ZIF1'))
-            btn.pack(side='left', padx=2)
-            btn.image = icon
-        except Exception as e:
-            app_logger.warning(f"Failed to load camera-photo.png: {e}")
-        
-        # Файл - Конус ЗИФ2
-        try:
-            icon = tk.PhotoImage(file=f"{icon_dir}/camera-photo.png")
-            self.toolbar_icons['zif2'] = icon
-            btn = ttk.Button(toolbar, image=icon, command=lambda: self._on_trassir_click('ZIF2'))
-            btn.pack(side='left', padx=2)
-            btn.image = icon
-        except Exception as e:
-            app_logger.warning(f"Failed to load camera-photo.png for ZIF2: {e}")
-        
-        # Сепаратор
-        ttk.Separator(toolbar, orient='vertical').pack(side='left', fill='y', padx=5)
-        
-        # Вид - Увеличить
-        try:
-            icon = tk.PhotoImage(file=f"{icon_dir}/list-add.png")
-            self.toolbar_icons['zoom_in'] = icon
-            btn = ttk.Button(toolbar, image=icon, command=self.zoom_in)
-            btn.pack(side='left', padx=2)
-            btn.image = icon
-        except Exception as e:
-            app_logger.warning(f"Failed to load list-add.png: {e}")
-        
-        # Вид - Уменьшить
-        try:
-            icon = tk.PhotoImage(file=f"{icon_dir}/list-remove.png")
-            self.toolbar_icons['zoom_out'] = icon
-            btn = ttk.Button(toolbar, image=icon, command=self.zoom_out)
-            btn.pack(side='left', padx=2)
-            btn.image = icon
-        except Exception as e:
-            app_logger.warning(f"Failed to load list-remove.png: {e}")
-        
-        # Сепаратор
-        ttk.Separator(toolbar, orient='vertical').pack(side='left', fill='y', padx=5)
-        
-        # Правка - Очистить треугольник
-        try:
-            icon = tk.PhotoImage(file=f"{icon_dir}/edit-clear.png")
-            self.toolbar_icons['clear'] = icon
-            btn = ttk.Button(toolbar, image=icon, command=self.clear_triangle)
-            btn.pack(side='left', padx=2)
-            btn.image = icon
-        except Exception as e:
-            app_logger.warning(f"Failed to load edit-clear.png: {e}")
 
     def _setup_bindings(self):
         """Настройка обработчиков событий"""
