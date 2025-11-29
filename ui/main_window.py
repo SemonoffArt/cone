@@ -56,11 +56,11 @@ class MainWindow:
 
         # Панель инструментов (Toolbar)
         self.toolbar = Toolbar(self.root, self)
-        self.toolbar.pack(side='top', fill='x', padx=5, pady=5)
+        self.toolbar.pack(side='top', fill='x', padx=5, pady=(5,0))
 
         # Основной фрейм
         main_frame = ttk.Frame(self.root)
-        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        main_frame.pack(fill='both', expand=True, padx=10, pady=(0, 5))
 
         # Область изображения
         image_frame = ttk.LabelFrame(main_frame, text="")
