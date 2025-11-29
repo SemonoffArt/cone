@@ -35,7 +35,7 @@ class InfoPanel:
         self.parameters_label.pack(anchor='w', pady=2)
         
         # Формула расчета объема конуса
-        ttk.Label(self.frame, text="Формула: V = ⅓πR²h", font=('Arial', 9, 'italic')).pack(anchor='w', pady=(5, 0))
+        ttk.Label(self.frame, text="Формула: V = ⅓πR²h", font=('Arial', 9)).pack(anchor='w', pady=(5, 0))
 
         ttk.Separator(self.frame, orient='horizontal').pack(fill='x', pady=10)
 
@@ -78,20 +78,6 @@ class InfoPanel:
         
         self.zoom_label = ttk.Label(self.frame, text="Масштаб: 100%")
         self.zoom_label.pack(anchor='w', pady=2)
-        
-        ttk.Separator(self.frame, orient='horizontal').pack(fill='x', pady=10)
-        # Кнопки загрузки с Trassir
-        ttk.Label(self.frame, text="Загрузить с Trassir:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(0, 5))
-
-        # Кнопка загрузки с Trassir (внешний обработчик устанавливается через set_trassir_callback)
-        self.get_screen_cone_zif1_button = ttk.Button(self.frame, text="Конус ЗИФ1", command=self._on_trassir1_click)
-        self.get_screen_cone_zif1_button.pack(fill='x', pady=8)
-
-        # Кнопка загрузки с Trassir (внешний обработчик устанавливается через set_trassir_callback)
-        self.get_screen_cone_zif2_button = ttk.Button(self.frame, text="Конус ЗИФ2", command=self._on_trassir2_click)
-        self.get_screen_cone_zif2_button.pack(fill='x', pady=8)
-
-        ttk.Separator(self.frame, orient='horizontal').pack(fill='x', pady=10)
 
     def update_triangle_info(self, sides_data):
         """Обновление информации о треугольнике"""
@@ -176,34 +162,7 @@ class InfoPanel:
     def set_pixel_size(self, size_m):
         """Установка размера пикселя"""
         self.pixel_size_var_zif1.set(str(size_m))
-
-    def set_trassir1_callback(self, callback):
-        """Установить callback для кнопки 'Загрузить с Trassir'"""
-        self._trassir1_callback = callback
-
-    def set_trassir2_callback(self, callback):
-        """Установить callback для кнопки 'Загрузить с Trassir2'"""
-        self._trassir2_callback = callback  
-
-    def _on_trassir1_click(self):
-        """Вызов внешнего callback при нажатии на кнопку Trassir"""
-        if callable(self._trassir1_callback):
-            try:
-                self._trassir1_callback('ZIF1')
-            except Exception:
-                # Простая защита — не даем упасть приложению при ошибке в callback
-                pass  
-
-    def _on_trassir2_click(self):
-        """Вызов внешнего callback при нажатии на кнопку Trassir"""
-        if callable(self._trassir2_callback):
-            try:
-                self._trassir2_callback('ZIF2')
-            except Exception:
-                # Простая защита — не даем упасть приложению при ошибке в callback
-                pass
     
-            
 
     def pack(self, **kwargs):
         """Упаковка панели"""

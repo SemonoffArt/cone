@@ -91,10 +91,6 @@ class MainWindow:
         # Панель информации
         self.info_panel = InfoPanel(main_frame)
         self.info_panel.pack(side='right', fill='y', padx=(10, 0))
-        
-        # Установка callback для кнопок Trassir в панели информации
-        self.info_panel.set_trassir1_callback(self._on_trassir_click)
-        self.info_panel.set_trassir2_callback(self._on_trassir_click)
 
         # Статус бар
         self.status_var = tk.StringVar(value="Готов к работе")
