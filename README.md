@@ -1,4 +1,8 @@
 # Cone App 🔺
+![CONE APP](./resources/cone_app.png)
+[![Python Version](https://img.shields.io/badge/python-3.13%2B-blue)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](https://github.com/SemonoffArt/cone)
 
 Графическое приложение для расчёта объёма руды на складских кучах. Разработано на Python и Tkinter, приложение позволяет пользователям рисовать треугольники на изображениях и автоматически рассчитывает объём конусов с точными измерениями.
 
