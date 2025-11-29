@@ -43,7 +43,8 @@ class MainWindow:
 
         self._setup_ui()
         self._setup_bindings()
-        self._setup_trassir()
+        # Инициализируем trassir как None, подключение будет установлено при первом использовании
+        self.trassir = None
         app_logger.info("Main window initialized successfully")
 
         # Автоматическая загрузка скриншота Конус ЗИФ1 при запуске
@@ -90,6 +91,10 @@ class MainWindow:
         # Панель информации
         self.info_panel = InfoPanel(main_frame)
         self.info_panel.pack(side='right', fill='y', padx=(10, 0))
+        
+        # Установка callback для кнопок Trassir в панели информации
+        self.info_panel.set_trassir1_callback(self._on_trassir_click)
+        self.info_panel.set_trassir2_callback(self._on_trassir_click)
 
         # Статус бар
         self.status_var = tk.StringVar(value="Готов к работе")
@@ -125,9 +130,6 @@ class MainWindow:
         """Настройка подключения к Trassir"""
         try:
             self.trassir = Trassir(ip=trassir_ip)
-            # Установка callback для кнопки Trassir в панели информации
-            self.info_panel.set_trassir1_callback(self._on_trassir_click)
-            self.info_panel.set_trassir2_callback(self._on_trassir_click)
         except Exception as e:
             app_logger.error(f"Failed to initialize Trassir connection: {e}")
             self.trassir = None
