@@ -2,6 +2,7 @@
 Меню приложения
 """
 import tkinter as tk
+import tkinter.messagebox
 from core.image_loader import ImageLoader
 
 
@@ -30,6 +31,8 @@ class Menu:
         # Меню "Правка"
         self.edit_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.edit_menu.add_command(label="Очистить треугольник", command=self.app.clear_triangle)
+        self.edit_menu.add_separator()
+        self.edit_menu.add_command(label="Скопировать объем конуса", command=self.app.copy_cone_volume)
         self.menu_bar.add_cascade(label="Правка", menu=self.edit_menu)
 
         # Меню "Справка"
@@ -42,14 +45,17 @@ class Menu:
     def show_about(self):
         """Показать информацию о программе"""
         about_text = """Cone App
-Версия 1.0
+Версия 0.1
 
-Графическое приложение для построения треугольников 
-и расчета объемов конусов.
+Построение треугольников 
+и расчет объемов конусов.
 
-Функции:
-- Загрузка изображений
-- Построение треугольников
-- Расчет объемов конусов"""
+GitHub:
+https://github.com/SemonoffArt/cone
+
+Семёнов Артемий
+https://semonoffart.github.io/
+
+2025"""
 
         tk.messagebox.showinfo("О программе", about_text)

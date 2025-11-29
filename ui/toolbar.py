@@ -149,6 +149,17 @@ class Toolbar:
             ToolTip(btn, "Очистить треугольник")
         except Exception as e:
             app_logger.warning(f"Failed to load edit-clear.png: {e}")
+        
+        # Правка - Скопировать объем конуса
+        try:
+            icon = tk.PhotoImage(file=f"{icon_dir}/edit-copy.png")
+            self.toolbar_icons['copy'] = icon
+            btn = ttk.Button(self.frame, image=icon, command=self.app.copy_cone_volume)
+            btn.pack(side='left', padx=2)
+            btn.image = icon
+            ToolTip(btn, "Скопировать объем конуса")
+        except Exception as e:
+            app_logger.warning(f"Failed to load edit-copy.png: {e}")
     
     def pack(self, **kwargs):
         """Упаковка панели инструментов"""
