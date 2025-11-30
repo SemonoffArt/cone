@@ -24,7 +24,9 @@ class MainWindow:
         self.root = tk.Tk()
         self.root.title("Конус - расчёт объёма конуса руды на складе")
         self.root.geometry("1200x700")
-        self.root.iconbitmap(default="./resources/icon.ico")
+        # self.root.iconbitmap(default="./resources/icons/icon.ico")
+        self.root.iconbitmap(default="./resources/icons/pavlik_logo.ico")
+        
         # Инициализация компонентов
         self.config = Config()
         self.triangle_manager = TriangleManager()
@@ -765,6 +767,7 @@ GitHub:
 {AUTHOR}
 {WEBSITE}
 {EMAIL}
+2025
 """
         messagebox.showinfo("О программе", about_text)
 

@@ -163,7 +163,7 @@ class Toolbar:
         
         # Справка - О программе (кнопка справа)
         try:
-            icon = tk.PhotoImage(file="./resources/pavlik_logo.png")
+            icon = tk.PhotoImage(file="./resources/icons/manky32.png")
             self.toolbar_icons['about'] = icon
             btn = ttk.Button(self.frame, image=icon, command=self.app.show_about)
             btn.pack(side='right', padx=2)
