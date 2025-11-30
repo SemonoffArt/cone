@@ -4,6 +4,8 @@
 import tkinter as tk
 import tkinter.messagebox
 from core.image_loader import ImageLoader
+from utils.constants import VERSION, APP_NAME, DESCRIPTION, GITHUB_URL, AUTHOR, WEBSITE, EMAIL
+
 
 
 class Menu:
@@ -44,18 +46,16 @@ class Menu:
 
     def show_about(self):
         """Показать информацию о программе"""
-        about_text = """Cone App
-Версия 0.1
+        about_text = f"""Cone App
+Версия {VERSION}
 
-Построение треугольников 
-и расчет объемов конусов.
+{DESCRIPTION}.
 
 GitHub:
-https://github.com/SemonoffArt/cone
+{GITHUB_URL}
 
-Семёнов Артемий
-https://semonoffart.github.io/
-
-2025"""
-
+{AUTHOR}
+{WEBSITE}
+{EMAIL}
+"""
         tk.messagebox.showinfo("О программе", about_text)

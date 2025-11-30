@@ -750,6 +750,23 @@ class MainWindow:
             app_logger.info(f"Cone volume copied to clipboard: {volume_for_clipboard} m³")
         else:
             messagebox.showwarning("Предупреждение", "Не удалось рассчитать объем")
+    
+    def show_about(self):
+        """Показать информацию о программе"""
+        from utils.constants import VERSION, APP_NAME, DESCRIPTION, GITHUB_URL, AUTHOR, WEBSITE, EMAIL
+        about_text = f"""Cone App
+Версия {VERSION}
+
+{DESCRIPTION}.
+
+GitHub:
+{GITHUB_URL}
+
+{AUTHOR}
+{WEBSITE}
+{EMAIL}
+"""
+        messagebox.showinfo("О программе", about_text)
 
     def run(self):
         """Запуск приложения"""

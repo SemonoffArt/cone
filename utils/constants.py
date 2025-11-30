@@ -2,6 +2,16 @@
 Константы приложения
 """
 
+VERSION = "0.1"
+APP_NAME = "Cone App"
+DESCRIPTION = "Приложение для построения треугольников и расчета объемов конусов"
+GITHUB_URL = "https://github.com/SemonoffArt/cone"
+AUTHOR = "Артемий Семёнов"
+WEBSITE = "https://semonoffart.github.io/"
+LICENSE = "MIT License"
+COPYRIGHT = "Copyright © 2025 Semonoff Art"
+EMAIL = "semonoff@gmail.com"
+
 # Цвета
 COLOR_TRIANGLE = "blue"
 COLOR_VERTEX = "red"
@@ -15,7 +25,7 @@ LINE_WIDTH = 2
 TEXT_FONT = ("Arial", 10)
 
 # Настройки по умолчанию
-DEFAULT_PIXEL_SIZE_M = 0.001  # размер пикселя в метрах (1 мм = 0.001 м)
+DEFAULT_PIXEL_SIZE_M = 0.008  # размер пикселя в метрах (1 мм = 0.001 м)
 CANVAS_WIDTH = 800
 CANVAS_HEIGHT = 600
 
