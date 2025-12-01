@@ -10,3 +10,4 @@ wheels/
 .venv
 resources/imgs/screenshot_*
 
+logs/

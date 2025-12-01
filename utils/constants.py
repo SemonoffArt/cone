@@ -2,7 +2,7 @@
 Константы приложения
 """
 
-VERSION = "0.1"
+VERSION = "0.1.1"
 APP_NAME = "Cone App"
 DESCRIPTION = "Приложение для построения треугольников и расчета объемов конусов"
 GITHUB_URL = "https://github.com/SemonoffArt/cone"
@@ -11,6 +11,9 @@ WEBSITE = "https://semonoffart.github.io/"
 LICENSE = "MIT License"
 COPYRIGHT = "Copyright © 2025 Semonoff Art"
 EMAIL = "semonoff@gmail.com"
+
+# (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+LOG_LEVEL = 'INFO' # Level of logging
 
 # Цвета
 COLOR_TRIANGLE = "blue"
