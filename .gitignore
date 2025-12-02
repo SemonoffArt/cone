@@ -11,3 +11,4 @@ wheels/
 resources/imgs/screenshot_*
 
 logs/
+output/

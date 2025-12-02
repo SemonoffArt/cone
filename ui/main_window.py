@@ -4,6 +4,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import os
+import sys
 
 from .menu import Menu
 from .toolbar import Toolbar
@@ -18,14 +19,42 @@ from utils.trassir import Trassir
 from PIL import Image, ImageTk
 
 
+def get_resource_path(relative_path):
+    """
+    Получить абсолютный путь к ресурсу для работы с PyInstaller
+    
+    Args:
+        relative_path: Относительный путь к ресурсу
+    
+    Returns:
+        Абсолютный путь к ресурсу
+    """
+    try:
+        # PyInstaller создает временную папку и сохраняет путь в _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        # Если не запущено через PyInstaller, используем текущую директорию
+        base_path = os.path.abspath(".")
+    
+    return os.path.join(base_path, relative_path)
+
+
 class MainWindow:
     def __init__(self):
         app_logger.info("Initializing main window")
         self.root = tk.Tk()
         self.root.title("Конус - расчёт объёма конуса руды на складе")
         self.root.geometry("1200x700")
-        # self.root.iconbitmap(default="./resources/icons/icon.ico")
-        self.root.iconbitmap(default="./resources/icons/pavlik_logo.ico")
+        
+        # Используем функцию для получения правильного пути к иконке
+        try:
+            icon_path = get_resource_path("resources/icons/pavlik_logo.ico")
+            if os.path.exists(icon_path):
+                self.root.iconbitmap(default=icon_path)
+            else:
+                app_logger.warning(f"Icon file not found: {icon_path}")
+        except Exception as e:
+            app_logger.warning(f"Failed to set window icon: {e}")
         
         # Инициализация компонентов
         self.config = Config()

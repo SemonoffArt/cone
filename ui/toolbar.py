@@ -3,7 +3,29 @@
 """
 import tkinter as tk
 from tkinter import ttk
+import os
+import sys
 from utils.logger import app_logger
+
+
+def get_resource_path(relative_path):
+    """
+    Получить абсолютный путь к ресурсу для работы с PyInstaller
+    
+    Args:
+        relative_path: Относительный путь к ресурсу
+    
+    Returns:
+        Абсолютный путь к ресурсу
+    """
+    try:
+        # PyInstaller создает временную папку и сохраняет путь в _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        # Если не запущено через PyInstaller, используем текущую директорию
+        base_path = os.path.abspath(".")
+    
+    return os.path.join(base_path, relative_path)
 
 
 class ToolTip:
@@ -60,11 +82,12 @@ class Toolbar:
     
     def _create_toolbar(self):
         """Создание панели инструментов"""
-        icon_dir = "./resources/icons"
+        icon_dir = "resources/icons"
         
         # Файл - Открыть
         try:
-            icon = tk.PhotoImage(file=f"{icon_dir}/document-open.png")
+            icon_path = get_resource_path(f"{icon_dir}/document-open.png")
+            icon = tk.PhotoImage(file=icon_path)
             self.toolbar_icons['open'] = icon
             btn = ttk.Button(self.frame, image=icon, command=self.app.open_image)
             btn.pack(side='left', padx=2)
@@ -75,7 +98,8 @@ class Toolbar:
         
         # Файл - Сохранить
         try:
-            icon = tk.PhotoImage(file=f"{icon_dir}/document-save.png")
+            icon_path = get_resource_path(f"{icon_dir}/document-save.png")
+            icon = tk.PhotoImage(file=icon_path)
             self.toolbar_icons['save'] = icon
             btn = ttk.Button(self.frame, image=icon, command=self.app.save_image)
             btn.pack(side='left', padx=2)
@@ -89,7 +113,8 @@ class Toolbar:
         
         # Файл - Конус ЗИФ1
         try:
-            icon = tk.PhotoImage(file=f"{icon_dir}/camera-photo.png")
+            icon_path = get_resource_path(f"{icon_dir}/camera-photo.png")
+            icon = tk.PhotoImage(file=icon_path)
             self.toolbar_icons['zif1'] = icon
             btn = ttk.Button(self.frame, image=icon, 
                            command=lambda: self.app._on_trassir_click('ZIF1'))
@@ -101,7 +126,8 @@ class Toolbar:
         
         # Файл - Конус ЗИФ2
         try:
-            icon = tk.PhotoImage(file=f"{icon_dir}/camera-photo.png")
+            icon_path = get_resource_path(f"{icon_dir}/camera-photo.png")
+            icon = tk.PhotoImage(file=icon_path)
             self.toolbar_icons['zif2'] = icon
             btn = ttk.Button(self.frame, image=icon, 
                            command=lambda: self.app._on_trassir_click('ZIF2'))
@@ -116,7 +142,8 @@ class Toolbar:
         
         # Вид - Увеличить
         try:
-            icon = tk.PhotoImage(file=f"{icon_dir}/list-add.png")
+            icon_path = get_resource_path(f"{icon_dir}/list-add.png")
+            icon = tk.PhotoImage(file=icon_path)
             self.toolbar_icons['zoom_in'] = icon
             btn = ttk.Button(self.frame, image=icon, command=self.app.zoom_in)
             btn.pack(side='left', padx=2)
@@ -127,7 +154,8 @@ class Toolbar:
         
         # Вид - Уменьшить
         try:
-            icon = tk.PhotoImage(file=f"{icon_dir}/list-remove.png")
+            icon_path = get_resource_path(f"{icon_dir}/list-remove.png")
+            icon = tk.PhotoImage(file=icon_path)
             self.toolbar_icons['zoom_out'] = icon
             btn = ttk.Button(self.frame, image=icon, command=self.app.zoom_out)
             btn.pack(side='left', padx=2)
@@ -141,7 +169,8 @@ class Toolbar:
         
         # Правка - Очистить треугольник
         try:
-            icon = tk.PhotoImage(file=f"{icon_dir}/edit-clear.png")
+            icon_path = get_resource_path(f"{icon_dir}/edit-clear.png")
+            icon = tk.PhotoImage(file=icon_path)
             self.toolbar_icons['clear'] = icon
             btn = ttk.Button(self.frame, image=icon, command=self.app.clear_triangle)
             btn.pack(side='left', padx=2)
@@ -152,7 +181,8 @@ class Toolbar:
         
         # Правка - Скопировать объем конуса
         try:
-            icon = tk.PhotoImage(file=f"{icon_dir}/edit-copy.png")
+            icon_path = get_resource_path(f"{icon_dir}/edit-copy.png")
+            icon = tk.PhotoImage(file=icon_path)
             self.toolbar_icons['copy'] = icon
             btn = ttk.Button(self.frame, image=icon, command=self.app.copy_cone_volume)
             btn.pack(side='left', padx=2)
@@ -163,7 +193,8 @@ class Toolbar:
         
         # Справка - О программе (кнопка справа)
         try:
-            icon = tk.PhotoImage(file="./resources/icons/manky32.png")
+            icon_path = get_resource_path("resources/icons/manky32.png")
+            icon = tk.PhotoImage(file=icon_path)
             self.toolbar_icons['about'] = icon
             btn = ttk.Button(self.frame, image=icon, command=self.app.show_about)
             btn.pack(side='right', padx=2)
