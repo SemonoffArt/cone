@@ -38,7 +38,7 @@ def detect_cone_zif2(image: Image.Image) -> list[tuple[float, float]] | None:
     return None
 
 
-def detect_cone_zif(image: Image.Image, roi_config: tuple[int, int, int, int] | list[int]) -> list[tuple[float, float]] | None:
+def detect_cone_zif(image: Image.Image, roi_config: tuple[int, int, int, int] | list[int], cone_center: list[int]) -> list[tuple[float, float]] | None:
     """
     Автоматическое распознавание конуса ЗИФ2 и построение треугольника.
     Использует алгоритм на основе контурного анализа.
@@ -100,7 +100,7 @@ def detect_cone_zif(image: Image.Image, roi_config: tuple[int, int, int, int] | 
         points = largest_contour.reshape(-1, 2)
         
         # Получаем параметры центральной зоны из конфигурации
-        cone_center = CAM_CONE_ZIF2.get("cone_center", [40, 60])
+        # cone_center = CAM_CONE_ZIF2.get("cone_center", [40, 60])
         center_x_min_pct, center_x_max_pct = cone_center
         
         # Ищем вершину пирамиды в центральной зоне
@@ -122,11 +122,23 @@ def detect_cone_zif(image: Image.Image, roi_config: tuple[int, int, int, int] | 
             peak_point = points[np.argmin(points[:, 1])]
             app_logger.warning(f"No central points, using highest point: {peak_point}")
         
-        # Левая и правая точки — самые крайние по X
-        left_point = points[np.argmin(points[:, 0])]
-        right_point = points[np.argmax(points[:, 0])]
+        # Левая и правая точки — самые крайние по X в нижних 20% ROI
+        roi_height = y2 - y1
+        bottom_threshold = roi_height * 0.8  # Точки должны быть в нижних 20% (выше 80% высоты)
+        
+        # Фильтруем точки в нижней части ROI
+        bottom_points = points[points[:, 1] >= bottom_threshold]
+        
+        if len(bottom_points) == 0:
+            app_logger.warning("No points found in bottom 20% of ROI, using all points")
+            bottom_points = points
+        
+        # Находим самые крайние точки по X среди нижних точек
+        left_point = bottom_points[np.argmin(bottom_points[:, 0])]
+        right_point = bottom_points[np.argmax(bottom_points[:, 0])]
         
         app_logger.debug(f"Triangle points - Left: {left_point}, Right: {right_point}, Peak: {peak_point}")
+        app_logger.debug(f"Bottom threshold: {bottom_threshold}, ROI height: {roi_height}")
         
         # Преобразуем координаты из ROI в глобальную систему координат
         left_global = (float(left_point[0] + x1), float(left_point[1] + y1))
@@ -160,9 +172,9 @@ def auto_detect_triangle(image: Image.Image, cone_type: str) -> list[tuple[float
     # cone_type = "ZIF2"
 
     if cone_type == "ZIF1":
-        return detect_cone_zif(image, CAM_CONE_ZIF1.get("roi", None))
+        return detect_cone_zif(image, CAM_CONE_ZIF1.get("roi", None), CAM_CONE_ZIF1.get("cone_center", []))
     elif cone_type == "ZIF2":
-        return detect_cone_zif(image, CAM_CONE_ZIF2.get("roi", None))
+        return detect_cone_zif(image, CAM_CONE_ZIF2.get("roi", None), CAM_CONE_ZIF2.get("cone_center", []))
     else:
         app_logger.error(f"Unknown cone type: {cone_type}")
         return None

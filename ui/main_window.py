@@ -166,6 +166,8 @@ class MainWindow:
     def _on_trassir_click(self, button_type='ZIF1'):
         """Обработка нажатия на кнопку Trassir"""
         if button_type == 'ZIF1':
+            # Устанавливаем тип конуса
+            self.current_cone_type = "ZIF1"
             # Используем IP и имя канала из конфигурации
             trassir_ip = CAM_CONE_ZIF1["trassir_ip"]
             channel_name = CAM_CONE_ZIF1["chanel_name"]
@@ -173,6 +175,8 @@ class MainWindow:
             self._setup_trassir(trassir_ip)
             self._load_trassir_screenshot(channel_name, pixel_size_m)
         elif button_type == 'ZIF2':
+            # Устанавливаем тип конуса
+            self.current_cone_type = "ZIF2"
             # Используем IP и имя канала из конфигурации
             trassir_ip = CAM_CONE_ZIF2["trassir_ip"]
             channel_name = CAM_CONE_ZIF2["chanel_name"]
@@ -181,6 +185,7 @@ class MainWindow:
             self._load_trassir_screenshot(channel_name, pixel_size_m)
         else:
             # По умолчанию загружаем скриншот для ЗИФ1
+            self.current_cone_type = "ZIF1"
             trassir_ip = CAM_CONE_ZIF1["trassir_ip"]
             channel_name = CAM_CONE_ZIF1["chanel_name"]
             pixel_size_m = CAM_CONE_ZIF1["pixel_size_m"]
@@ -410,7 +415,7 @@ class MainWindow:
                 self._adjust_window_size()
                 
                 # Сбрасываем тип конуса при открытии локального файла
-                self.current_cone_type = None
+                # self.current_cone_type = None
 
             except Exception as e:
                 app_logger.error(f"Failed to load image: {str(e)}")
