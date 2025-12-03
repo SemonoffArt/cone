@@ -12,3 +12,7 @@ resources/imgs/screenshot_*
 
 logs/
 output/
+
+.qoder/
+
+tmp/
