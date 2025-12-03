@@ -179,6 +179,21 @@ class Toolbar:
         except Exception as e:
             app_logger.warning(f"Failed to load edit-clear.png: {e}")
         
+        # Правка - Автоматически построить треугольник
+        try:
+            icon_path = get_resource_path(f"{icon_dir}/face-monkey.png")
+            icon = tk.PhotoImage(file=icon_path)
+            self.toolbar_icons['auto_triangle'] = icon
+            btn = ttk.Button(self.frame, image=icon, command=self.app.auto_build_triangle)
+            btn.pack(side='left', padx=2)
+            btn.image = icon
+            ToolTip(btn, "Автоматически построить треугольник")
+        except Exception as e:
+            app_logger.warning(f"Failed to load face-monkey.png: {e}")
+        
+        # Сепаратор
+        ttk.Separator(self.frame, orient='vertical').pack(side='left', fill='y', padx=5)
+        
         # Правка - Скопировать объем конуса
         try:
             icon_path = get_resource_path(f"{icon_dir}/edit-copy.png")

@@ -32,6 +32,8 @@ class Menu:
 
         # Меню "Правка"
         self.edit_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.edit_menu.add_command(label="Автоматически построить треугольник", command=self.app.auto_build_triangle)
+        self.edit_menu.add_separator()
         self.edit_menu.add_command(label="Очистить треугольник", command=self.app.clear_triangle)
         self.edit_menu.add_separator()
         self.edit_menu.add_command(label="Скопировать объем конуса", command=self.app.copy_cone_volume)

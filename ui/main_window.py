@@ -12,6 +12,7 @@ from .info_panel import InfoPanel
 from core.image_loader import ImageLoader
 from core.triangle import TriangleManager
 from core.cone_calculator import ConeCalculator
+from core.vision import auto_detect_triangle
 from utils.constants import *
 from utils.config import Config
 from utils.logger import app_logger
@@ -71,6 +72,7 @@ class MainWindow:
         self.base_image_size = None
         self.current_image_size = None  # Текущий размер отображаемого изображения
         self.original_image_size = None  # Размер оригинального изображения
+        self.current_cone_type = None  # Текущий тип конуса ("ZIF1" или "ZIF2")
 
         self._setup_ui()
         self._setup_bindings()
@@ -352,10 +354,12 @@ class MainWindow:
 
     def load_cone_zif1(self):
         """Загрузка скриншота для Конус ЗИФ1"""
+        self.current_cone_type = "ZIF1"
         self._on_trassir_click('ZIF1')
 
     def load_cone_zif2(self):
         """Загрузка скриншота для Конус ЗИФ2"""
+        self.current_cone_type = "ZIF2"
         self._on_trassir_click('ZIF2')
 
     def open_image(self):
@@ -404,6 +408,9 @@ class MainWindow:
                 
                 # Подстраиваем размер окна под изображение (масштаб 100%)
                 self._adjust_window_size()
+                
+                # Сбрасываем тип конуса при открытии локального файла
+                self.current_cone_type = None
 
             except Exception as e:
                 app_logger.error(f"Failed to load image: {str(e)}")
@@ -781,6 +788,84 @@ class MainWindow:
             app_logger.info(f"Cone volume copied to clipboard: {volume_for_clipboard} m³")
         else:
             messagebox.showwarning("Предупреждение", "Не удалось рассчитать объем")
+    
+    def auto_build_triangle(self):
+        """Автоматическое построение треугольника на основе компьютерного зрения"""
+        if not self.original_pil_image:
+            messagebox.showwarning(
+                "Предупреждение", 
+                "Сначала загрузите изображение"
+            )
+            return
+        
+        # if not self.current_cone_type:
+        #     messagebox.showwarning(
+        #         "Предупреждение", 
+        #         "Автоматическое построение доступно только для снимков Конус ЗИФ1 и ЗИФ2.\n"
+        #         "Загрузите снимок через меню Файл → Конус ЗИФ1 или Конус ЗИФ2."
+        #     )
+        #     return
+        
+        app_logger.info(f"Auto-building triangle for {self.current_cone_type}")
+        self.status_var.set("Распознавание конуса...")
+        
+        try:
+            # Вызываем алгоритм распознавания
+            triangle_points = auto_detect_triangle(
+                self.original_pil_image, 
+                self.current_cone_type
+            )
+            
+            if triangle_points is None:
+                app_logger.warning(f"Failed to detect triangle for {self.current_cone_type}")
+                messagebox.showwarning(
+                    "Предупреждение",
+                    f"Не удалось автоматически распознать конус на изображении {self.current_cone_type}.\n"
+                    f"Попробуйте построить треугольник вручную."
+                )
+                self.status_var.set("Распознавание не удалось")
+                return
+            
+            # Преобразуем координаты с учетом масштаба изображения
+            if self.original_image_size and self.current_image_size:
+                scale_x = self.current_image_size[0] / self.original_image_size[0]
+                scale_y = self.current_image_size[1] / self.original_image_size[1]
+                
+                scaled_points = [
+                    (x * scale_x, y * scale_y) 
+                    for x, y in triangle_points
+                ]
+            else:
+                scaled_points = triangle_points
+            
+            # Очищаем текущий треугольник
+            self.triangle_manager.vertices.clear()
+            
+            # Устанавливаем новые вершины
+            for x, y in scaled_points:
+                self.triangle_manager.vertices.append((x, y))
+            
+            # Обновляем стороны
+            pixel_size = self.info_panel.get_pixel_size()
+            scale_factor = 1.0
+            if self.original_image_size and self.current_image_size:
+                scale_factor = self.original_image_size[0] / self.current_image_size[0]
+            
+            self.triangle_manager._update_sides(pixel_size, scale_factor)
+            
+            # Перерисовываем canvas и обновляем информацию
+            self.on_triangle_changed()
+            
+            self.status_var.set(f"Треугольник построен автоматически ({self.current_cone_type})")
+            app_logger.info(f"Triangle auto-built successfully for {self.current_cone_type}")
+            
+        except Exception as e:
+            app_logger.error(f"Error in auto triangle building: {e}", exc_info=True)
+            messagebox.showerror(
+                "Ошибка",
+                f"Ошибка при автоматическом построении треугольника:\n{str(e)}"
+            )
+            self.status_var.set("Ошибка распознавания")
     
     def show_about(self):
         """Показать информацию о программе"""
