@@ -38,7 +38,7 @@ def detect_cone_zif2(image: Image.Image) -> list[tuple[float, float]] | None:
     return None
 
 
-def detect_cone_zif(image: Image.Image, roi_config: tuple[int, int, int, int] | list[int], cone_center: list[int]) -> list[tuple[float, float]] | None:
+def detect_cone_zif(image: Image.Image, roi_config: tuple[int, int, int, int] | list[int], cone_center: list[int], threshold: int = 80) -> list[tuple[float, float]] | None:
     """
     Автоматическое распознавание конуса ЗИФ2 и построение треугольника.
     Использует алгоритм на основе контурного анализа.
@@ -77,11 +77,13 @@ def detect_cone_zif(image: Image.Image, roi_config: tuple[int, int, int, int] | 
         gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
         
         # Бинаризация
-        _, thresh_roi = cv2.threshold(gray_roi, 80, 255, cv2.THRESH_BINARY_INV)
+        _, thresh_roi = cv2.threshold(gray_roi, threshold, 255, cv2.THRESH_BINARY_INV)
         
         # Морфологическая очистка
         kernel = np.ones((5, 5), np.uint8)
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
         thresh_clean_roi = cv2.morphologyEx(thresh_roi, cv2.MORPH_OPEN, kernel)
+
         
         # Поиск контуров в ROI
         contours, _ = cv2.findContours(
@@ -124,7 +126,7 @@ def detect_cone_zif(image: Image.Image, roi_config: tuple[int, int, int, int] | 
         
         # Левая и правая точки — самые крайние по X в нижних 20% ROI
         roi_height = y2 - y1
-        bottom_threshold = roi_height * 0.8  # Точки должны быть в нижних 20% (выше 80% высоты)
+        bottom_threshold = roi_height * 0.6 #0.8  # Точки должны быть в нижних 20% (выше 80% высоты)
         
         # Фильтруем точки в нижней части ROI
         bottom_points = points[points[:, 1] >= bottom_threshold]
@@ -172,9 +174,11 @@ def auto_detect_triangle(image: Image.Image, cone_type: str) -> list[tuple[float
     # cone_type = "ZIF2"
 
     if cone_type == "ZIF1":
-        return detect_cone_zif(image, CAM_CONE_ZIF1.get("roi", None), CAM_CONE_ZIF1.get("cone_center", []))
+        return detect_cone_zif(image, CAM_CONE_ZIF1.get("roi", None), CAM_CONE_ZIF1.get("cone_center", []), 
+            CAM_CONE_ZIF1.get("threshold", 50))
     elif cone_type == "ZIF2":
-        return detect_cone_zif(image, CAM_CONE_ZIF2.get("roi", None), CAM_CONE_ZIF2.get("cone_center", []))
+        return detect_cone_zif(image, CAM_CONE_ZIF2.get("roi", None), CAM_CONE_ZIF2.get("cone_center", []), 
+            CAM_CONE_ZIF2.get("threshold", 80))
     else:
         app_logger.error(f"Unknown cone type: {cone_type}")
         return None

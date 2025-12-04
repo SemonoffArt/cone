@@ -207,16 +207,16 @@ class Toolbar:
             app_logger.warning(f"Failed to load edit-copy.png: {e}")
         
         # Справка - О программе (кнопка справа)
-        try:
-            icon_path = get_resource_path("resources/icons/manky32.png")
-            icon = tk.PhotoImage(file=icon_path)
-            self.toolbar_icons['about'] = icon
-            btn = ttk.Button(self.frame, image=icon, command=self.app.show_about)
-            btn.pack(side='right', padx=2)
-            btn.image = icon
-            ToolTip(btn, "О программе")
-        except Exception as e:
-            app_logger.warning(f"Failed to load pavlik_logo.png: {e}")
+        # try:
+        #     icon_path = get_resource_path("resources/icons/manky32.png")
+        #     icon = tk.PhotoImage(file=icon_path)
+        #     self.toolbar_icons['about'] = icon
+        #     btn = ttk.Button(self.frame, image=icon, command=self.app.show_about)
+        #     btn.pack(side='right', padx=2)
+        #     btn.image = icon
+        #     ToolTip(btn, "О программе")
+        # except Exception as e:
+        #     app_logger.warning(f"Failed to load pavlik_logo.png: {e}")
     
     def pack(self, **kwargs):
         """Упаковка панели инструментов"""

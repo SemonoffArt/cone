@@ -38,6 +38,6 @@ TRASSIR_ZIF2_IP = "10.100.72.14"
 CAM_NAME_CONE_ZIF1 = "ЗИФ-1 19. Конус Руда"
 CAM_NAME_CONE_ZIF2 = "ККД-2 115. Конус"
 CAM_CONE_ZIF1 = {"chanel_name": "ЗИФ-1 19. Конус Руда", "trassir_ip": "10.100.59.10", "pixel_size_m": 0.08, 
-                "roi":[740,1055,230,425], "cone_center":[52,65]}
-CAM_CONE_ZIF2 = {"chanel_name": "ККД-2 115. Конус", "trassir_ip": "10.100.72.14", "pixel_size_m": 0.155, 
-                "roi":[716,1180,170,360], "cone_center":[40,60]}
+                "roi":[740,1055,230,425], "cone_center":[52,65], "threshold":50}
+CAM_CONE_ZIF2 = {"chanel_name": "ККД-2 115. Конус", "trassir_ip": "10.100.72.14", "pixel_size_m": 0.16, 
+                "roi":[716,1180,170,360], "cone_center":[40,60], "threshold":80}
