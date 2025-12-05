@@ -36,7 +36,7 @@ class Menu:
         self.edit_menu.add_separator()
         self.edit_menu.add_command(label="Очистить треугольник", command=self.app.clear_triangle)
         self.edit_menu.add_separator()
-        self.edit_menu.add_command(label="Скопировать объем конуса", command=self.app.copy_cone_volume)
+        self.edit_menu.add_command(label="Скопировать объем и массу конуса", command=self.app.copy_cone_volume)
         self.menu_bar.add_cascade(label="Правка", menu=self.edit_menu)
 
         # Меню "Справка"

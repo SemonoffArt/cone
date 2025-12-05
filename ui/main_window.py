@@ -779,7 +779,7 @@ class MainWindow:
         self.status_var.set("Треугольник очищен")
 
     def copy_cone_volume(self):
-        """Копирование объема конуса в буфер обмена"""
+        """Копирование объема и массы конуса в буфер обмена"""
         if not self.triangle_manager.is_complete():
             messagebox.showwarning("Предупреждение", "Сначала постройте треугольник")
             return
@@ -787,6 +787,7 @@ class MainWindow:
         # Получаем параметры конуса
         pixel_size = self.info_panel.get_pixel_size()
         k_vol = self.info_panel.get_k_vol()
+        k_den = self.info_panel.get_k_den()
         scale_factor = 1.0
         if self.original_image_size and self.current_image_size:
             scale_factor = self.original_image_size[0] / self.current_image_size[0]
@@ -800,13 +801,17 @@ class MainWindow:
         
         if cone_params['volume'] > 0:
             volume_text = f"{cone_params['volume']:.2f}"
-            # Заменяем точку на запятую для буфера
-            volume_for_clipboard = volume_text.replace('.', ',')
+            mass = cone_params['volume'] * k_den
+            mass_text = f"{mass:.2f}"
+            
+            # Формируем текст для буфера (заменяем точки на запятые)
+            clipboard_text = f"{volume_text.replace('.', ',')}\t{mass_text.replace('.', ',')}"
+            
             self.root.clipboard_clear()
-            self.root.clipboard_append(volume_for_clipboard)
+            self.root.clipboard_append(clipboard_text)
             self.root.update()  # Обновить буфер
-            self.status_var.set(f"Объем скопирован: {volume_text} m³")
-            app_logger.info(f"Cone volume copied to clipboard: {volume_for_clipboard} m³")
+            self.status_var.set(f"Скопировано: {volume_text} m³, {mass_text} т")
+            app_logger.info(f"Cone volume and mass copied to clipboard: {clipboard_text}")
         else:
             messagebox.showwarning("Предупреждение", "Не удалось рассчитать объем")
     
