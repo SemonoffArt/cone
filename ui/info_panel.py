@@ -60,8 +60,8 @@ class InfoPanel:
 
         ttk.Label(pixel_frame_zif1, text="Размер пикселя (м):").pack(side='left')
         self.pixel_size_var_zif1 = tk.StringVar(value="0.1")
-        self.pixel_size_entry_zif1 = ttk.Entry(pixel_frame_zif1, textvariable=self.pixel_size_var_zif1, width=8)
-        self.pixel_size_entry_zif1.pack(side='left', padx=5)
+        self.pixel_size_entry_zif1 = ttk.Entry(pixel_frame_zif1, textvariable=self.pixel_size_var_zif1, width=8, justify='right')
+        self.pixel_size_entry_zif1.pack(side='right')
         
         # Коэффициент объёма
         kvol_frame = ttk.Frame(self.frame)
@@ -69,17 +69,17 @@ class InfoPanel:
         
         ttk.Label(kvol_frame, text="Коэфф. объёма:").pack(side='left')
         self.k_vol_var = tk.StringVar(value="1.0")
-        self.k_vol_entry = ttk.Entry(kvol_frame, textvariable=self.k_vol_var, width=8)
-        self.k_vol_entry.pack(side='left', padx=5)
+        self.k_vol_entry = ttk.Entry(kvol_frame, textvariable=self.k_vol_var, width=8, justify='right')
+        self.k_vol_entry.pack(side='right')
         
         # Коэффициент плотности
         kden_frame = ttk.Frame(self.frame)
         kden_frame.pack(fill='x', pady=5)
         
-        ttk.Label(kden_frame, text="Коэфф. плотности (т/м³):").pack(side='left')
+        ttk.Label(kden_frame, text="Плотность конуса (т/м³):").pack(side='left')
         self.k_den_var = tk.StringVar(value="1.7")
-        self.k_den_entry = ttk.Entry(kden_frame, textvariable=self.k_den_var, width=8)
-        self.k_den_entry.pack(side='left', padx=5)
+        self.k_den_entry = ttk.Entry(kden_frame, textvariable=self.k_den_var, width=8, justify='right')
+        self.k_den_entry.pack(side='right')
 
         ttk.Separator(self.frame, orient='horizontal').pack(fill='x', pady=10)
 

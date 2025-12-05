@@ -123,7 +123,7 @@ class MainWindow:
 
         # Панель информации
         self.info_panel = InfoPanel(main_frame)
-        self.info_panel.pack(side='right', fill='y', padx=(10, 0))
+        self.info_panel.pack(side='right', fill='y', padx=(0, 0))
 
         # Статус бар
         self.status_var = tk.StringVar(value="Готов к работе")
