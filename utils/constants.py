@@ -2,7 +2,7 @@
 Константы приложения
 """
 
-VERSION = "0.2.2"
+VERSION = "0.3.0"
 APP_NAME = "Cone App"
 DESCRIPTION = "Приложение для построения треугольников и расчета объемов конусов"
 GITHUB_URL = "https://github.com/SemonoffArt/cone"
@@ -39,6 +39,6 @@ CAM_NAME_CONE_ZIF1 = "ЗИФ-1 19. Конус Руда"
 CAM_NAME_CONE_ZIF2 = "ККД-2 115. Конус"
 #0.08
 CAM_CONE_ZIF1 = {"chanel_name": "ЗИФ-1 19. Конус Руда", "trassir_ip": "10.100.59.10", "pixel_size_m": 0.135, 
-                "roi":[740,1055,230,425], "cone_center":[45,65], "threshold":65}
+                "roi":[740,1055,230,425], "cone_center":[45,65], "threshold":65, "k_vol":1, "k_den":1.76}
 CAM_CONE_ZIF2 = {"chanel_name": "ККД-2 115. Конус", "trassir_ip": "10.100.72.14", "pixel_size_m": 0.16, 
-                "roi":[716,1180,170,360], "cone_center":[40,60], "threshold":85}
+                "roi":[716,1180,170,360], "cone_center":[40,60], "threshold":85, "k_vol":0.55, "k_den":1.76}

@@ -138,9 +138,13 @@ class MainWindow:
         self.canvas.bind("<ButtonRelease-1>", self.on_canvas_release)
         self.canvas.bind("<Motion>", self.on_canvas_motion)
 
-        # Обновление при изменении размера пикселя
+        # Обновление информации при изменении размера пикселя
         self.info_panel.pixel_size_var_zif1.trace(
             'w', self.on_pixel_size_changed)
+        
+        # Обновление при изменении коэффициентов
+        self.info_panel.k_vol_var.trace('w', lambda *args: self.on_triangle_changed())
+        self.info_panel.k_den_var.trace('w', lambda *args: self.on_triangle_changed())
 
         # Горячие клавиши для масштабирования
         self.root.bind("<plus>", lambda e: self.zoom_in())  # +
@@ -291,10 +295,12 @@ class MainWindow:
 
         # Расчет и обновление информации о конусе
         if self.triangle_manager.is_complete():
+            k_vol = self.info_panel.get_k_vol()
             cone_params = ConeCalculator.get_cone_parameters(
                 self.triangle_manager.vertices,
                 pixel_size,
-                scale_factor
+                scale_factor,
+                k_vol
             )
             self.info_panel.update_cone_info(cone_params)
 
@@ -539,6 +545,14 @@ class MainWindow:
                 self.info_panel.set_pixel_size(pixel_size_m)
                 self.config.set_pixel_size(pixel_size_m)
                 self.triangle_manager._update_sides(pixel_size_m)
+            
+            # Устанавливаем коэффициенты из конфигурации камеры
+            if self.current_cone_type == "ZIF1":
+                self.info_panel.set_k_vol(CAM_CONE_ZIF1.get("k_vol", 1.0))
+                self.info_panel.set_k_den(CAM_CONE_ZIF1.get("k_den", 1.7))
+            elif self.current_cone_type == "ZIF2":
+                self.info_panel.set_k_vol(CAM_CONE_ZIF2.get("k_vol", 1.0))
+                self.info_panel.set_k_den(CAM_CONE_ZIF2.get("k_den", 1.7))
 
             # Перерисовываем canvas
             self.redraw_canvas()
@@ -772,6 +786,7 @@ class MainWindow:
         
         # Получаем параметры конуса
         pixel_size = self.info_panel.get_pixel_size()
+        k_vol = self.info_panel.get_k_vol()
         scale_factor = 1.0
         if self.original_image_size and self.current_image_size:
             scale_factor = self.original_image_size[0] / self.current_image_size[0]
@@ -779,7 +794,8 @@ class MainWindow:
         cone_params = ConeCalculator.get_cone_parameters(
             self.triangle_manager.vertices,
             pixel_size,
-            scale_factor
+            scale_factor,
+            k_vol
         )
         
         if cone_params['volume'] > 0:

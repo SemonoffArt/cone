@@ -20,6 +20,7 @@ class InfoPanel:
             'CA': tk.StringVar(value="Сторона CA: -")
         }
         self.volume_var = tk.StringVar(value="Объем: -")
+        self.mass_var = tk.StringVar(value="Масса: -")
         self.parameters_var = tk.StringVar(value="Параметры конуса: -")
 
     def _create_widgets(self):
@@ -30,12 +31,15 @@ class InfoPanel:
         
         self.volume_label = ttk.Label(self.frame, text="Объем: -", font=('Arial', 15, 'bold'))
         self.volume_label.pack(anchor='w', pady=2)
+        
+        self.mass_label = ttk.Label(self.frame, text="Масса: -", font=('Arial', 15, 'bold'))
+        self.mass_label.pack(anchor='w', pady=2)
 
         self.parameters_label = ttk.Label(self.frame, text="Параметры конуса: -")
         self.parameters_label.pack(anchor='w', pady=2)
         
         # Формула расчета объема конуса
-        ttk.Label(self.frame, text="Формула: V = ⅓πR²h", font=('Arial', 9)).pack(anchor='w', pady=(5, 0))
+        ttk.Label(self.frame, text="Формула: V = ⅓πR²h*k", font=('Arial', 9)).pack(anchor='w', pady=(5, 0))
 
         ttk.Separator(self.frame, orient='horizontal').pack(fill='x', pady=10)
 
@@ -58,6 +62,24 @@ class InfoPanel:
         self.pixel_size_var_zif1 = tk.StringVar(value="0.1")
         self.pixel_size_entry_zif1 = ttk.Entry(pixel_frame_zif1, textvariable=self.pixel_size_var_zif1, width=8)
         self.pixel_size_entry_zif1.pack(side='left', padx=5)
+        
+        # Коэффициент объёма
+        kvol_frame = ttk.Frame(self.frame)
+        kvol_frame.pack(fill='x', pady=5)
+        
+        ttk.Label(kvol_frame, text="Коэфф. объёма:").pack(side='left')
+        self.k_vol_var = tk.StringVar(value="1.0")
+        self.k_vol_entry = ttk.Entry(kvol_frame, textvariable=self.k_vol_var, width=8)
+        self.k_vol_entry.pack(side='left', padx=5)
+        
+        # Коэффициент плотности
+        kden_frame = ttk.Frame(self.frame)
+        kden_frame.pack(fill='x', pady=5)
+        
+        ttk.Label(kden_frame, text="Коэфф. плотности (т/м³):").pack(side='left')
+        self.k_den_var = tk.StringVar(value="1.7")
+        self.k_den_entry = ttk.Entry(kden_frame, textvariable=self.k_den_var, width=8)
+        self.k_den_entry.pack(side='left', padx=5)
 
         ttk.Separator(self.frame, orient='horizontal').pack(fill='x', pady=10)
 
@@ -100,13 +122,24 @@ class InfoPanel:
         if cone_parameters['volume'] > 0:
             volume_text = f"Объем: {cone_parameters['volume']:.2f} m³"
             params_text = f"Радиус: {cone_parameters['radius_m']:.2f} m, Высота: {cone_parameters['height_m']:.2f} m"
+            
+            # Рассчитываем массу руды
+            try:
+                k_den = float(self.k_den_var.get())
+                mass = cone_parameters['volume'] * k_den
+                mass_text = f"Масса: {mass:.2f} т"
+            except ValueError:
+                mass_text = "Масса: -"
+            
             # app_logger.info(f"Cone calculated - Volume: {cone_parameters['volume']:.2f} m³")
         else:
             volume_text = "Объем: -"
+            mass_text = "Масса: -"
             params_text = "Параметры конуса: -"
             app_logger.debug("No cone data to display")
 
         self.volume_label.config(text=volume_text)
+        self.mass_label.config(text=mass_text)
         self.parameters_label.config(text=params_text)
 
     def update_image_info(self, image_info):
@@ -162,6 +195,28 @@ class InfoPanel:
     def set_pixel_size(self, size_m):
         """Установка размера пикселя"""
         self.pixel_size_var_zif1.set(str(size_m))
+    
+    def get_k_vol(self):
+        """Получение коэффициента объёма из поля ввода"""
+        try:
+            return float(self.k_vol_var.get())
+        except ValueError:
+            return 1.0
+    
+    def set_k_vol(self, k_vol):
+        """Установка коэффициента объёма"""
+        self.k_vol_var.set(str(k_vol))
+    
+    def get_k_den(self):
+        """Получение коэффициента плотности из поля ввода"""
+        try:
+            return float(self.k_den_var.get())
+        except ValueError:
+            return 1.7
+    
+    def set_k_den(self, k_den):
+        """Установка коэффициента плотности"""
+        self.k_den_var.set(str(k_den))
     
 
     def pack(self, **kwargs):

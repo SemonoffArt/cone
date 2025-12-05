@@ -8,9 +8,15 @@ from utils.logger import app_logger
 
 class ConeCalculator:
     @staticmethod
-    def calculate_cone_volume(triangle_vertices, pixel_size_m, scale_factor=1.0):
+    def calculate_cone_volume(triangle_vertices, pixel_size_m, scale_factor=1.0, k_vol=1.0):
         """
         Расчет объема конуса на основе треугольника
+        
+        Args:
+            triangle_vertices: Вершины треугольника
+            pixel_size_m: Размер пикселя в метрах
+            scale_factor: Коэффициент масштабирования
+            k_vol: Коэффициент объёма
         """
         app_logger.debug(f"Calculating cone volume for vertices: {triangle_vertices}")
         if len(triangle_vertices) != 3:
@@ -58,19 +64,25 @@ class ConeCalculator:
 
         # Объем конуса
         if max_height > 0 and radius_mm > 0:
-            volume = (1 / 3) * math.pi * radius_mm ** 2 * max_height
-            app_logger.info(f"Calculated cone volume: {volume}")
+            volume = (1 / 3) * math.pi * radius_mm ** 2 * max_height * k_vol
+            app_logger.info(f"Calculated cone volume: {volume} (k_vol={k_vol})")
             return volume
         else:
             app_logger.warning("Unable to calculate cone volume - invalid dimensions")
             return 0
 
     @staticmethod
-    def get_cone_parameters(triangle_vertices, pixel_size_m, scale_factor=1.0):
+    def get_cone_parameters(triangle_vertices, pixel_size_m, scale_factor=1.0, k_vol=1.0):
         """
         Получение параметров конуса
+        
+        Args:
+            triangle_vertices: Вершины треугольника
+            pixel_size_m: Размер пикселя в метрах
+            scale_factor: Коэффициент масштабирования
+            k_vol: Коэффициент объёма
         """
-        volume = ConeCalculator.calculate_cone_volume(triangle_vertices, pixel_size_m, scale_factor)
+        volume = ConeCalculator.calculate_cone_volume(triangle_vertices, pixel_size_m, scale_factor, k_vol)
 
         # Находим основание и высоту для отображения
         if len(triangle_vertices) == 3:
