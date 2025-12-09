@@ -57,7 +57,7 @@ def _create_http_session() -> session:
     http_session.headers.update({'Connection': 'close'})
 
     retry_strategy = Retry(
-        total=3,
+        total=1,
         backoff_factor=1,
         status_forcelist=[429, 500, 502, 503, 504],
     )
@@ -188,7 +188,7 @@ class Trassir:
                 response = http_session.get(
                     f'{self.url}/objects/',
                     params=payload,
-                    timeout=15
+                    timeout=5
                 )
                 objects_text = response.text
         except RequestException as e:
@@ -230,7 +230,7 @@ class Trassir:
             with _create_http_session() as http_session:
                 payload = {'password': self.password}
                 url = f'{self.url}/screenshot/{guid}'
-                response = http_session.get(url, params=payload, timeout=15)
+                response = http_session.get(url, params=payload, timeout=5)
 
                 if response.ok and len(response.content) > 100:
                     if raw_img:
