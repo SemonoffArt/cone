@@ -517,6 +517,18 @@ class MainWindow:
                     "Ошибка", f"Не удалось получить скриншот канала: {channel_name}")
                 return
 
+            # Масштабируем изображение до ширины 1920px если нужно
+            original_width, original_height = screenshot.size
+            app_logger.info(f"Original screenshot size: {original_width}x{original_height}")
+            
+            if original_width != 1920:
+                # Вычисляем новую высоту сохраняя пропорции
+                scale_factor = 1920 / original_width
+                new_height = int(original_height * scale_factor)
+                screenshot = screenshot.resize(
+                    (1920, new_height), Image.Resampling.LANCZOS)
+                app_logger.info(f"Screenshot resized to: 1920x{new_height}")
+
             # Преобразуем PIL Image в PhotoImage для Tkinter
             # Масштабируем изображение под размер canvas
             canvas_width = self.canvas.winfo_width() or CANVAS_WIDTH

@@ -2,7 +2,7 @@
 Константы приложения
 """
 
-VERSION = "0.4.2"
+VERSION = "0.4.3"
 APP_NAME = "Cone App"
 DESCRIPTION = "Приложение для построения треугольников и расчета объемов и масс конусов"
 GITHUB_URL = "https://github.com/SemonoffArt/cone"
@@ -13,7 +13,7 @@ COPYRIGHT = "Copyright © 2025 Semonoff Art"
 EMAIL = "semonoff@gmail.com"
 
 # (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-LOG_LEVEL = 'WARNING' # Level of logging
+LOG_LEVEL = 'INFO' # Level of logging
 
 # Цвета
 COLOR_TRIANGLE = "blue"
@@ -38,7 +38,7 @@ TRASSIR_ZIF2_IP = "10.100.72.14"
 CAM_NAME_CONE_ZIF1 = "ЗИФ-1 19. Конус Руда"
 CAM_NAME_CONE_ZIF2 = "ККД-2 115. Конус"
 #0.08
-CAM_CONE_ZIF1 = {"chanel_name": "ЗИФ-1 19. Конус Руда", "trassir_ip": "10.100.59.10", "pixel_size_m": 0.135, 
-                "roi":[740,1055,230,425], "cone_center":[45,65], "threshold":65, "k_vol":0.8, "k_den":1.76}
+CAM_CONE_ZIF1 = {"chanel_name": "ЗИФ-1 19. Конус Руда", "trassir_ip": "10.100.59.10", "pixel_size_m": 0.091, 
+                "roi":[1125,1545,345,615], "cone_center":[45,65], "threshold":70, "k_vol":0.8, "k_den":1.76}
 CAM_CONE_ZIF2 = {"chanel_name": "ККД-2 115. Конус", "trassir_ip": "10.100.72.14", "pixel_size_m": 0.16, 
                 "roi":[716,1180,170,360], "cone_center":[40,60], "threshold":85, "k_vol":0.55, "k_den":1.76}
