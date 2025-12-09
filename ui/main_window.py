@@ -562,9 +562,11 @@ class MainWindow:
             if self.current_cone_type == "ZIF1":
                 self.info_panel.set_k_vol(CAM_CONE_ZIF1.get("k_vol", 1.0))
                 self.info_panel.set_k_den(CAM_CONE_ZIF1.get("k_den", 1.7))
+                self.info_panel.set_threshold(CAM_CONE_ZIF1.get("threshold", 50))
             elif self.current_cone_type == "ZIF2":
                 self.info_panel.set_k_vol(CAM_CONE_ZIF2.get("k_vol", 1.0))
                 self.info_panel.set_k_den(CAM_CONE_ZIF2.get("k_den", 1.7))
+                self.info_panel.set_threshold(CAM_CONE_ZIF2.get("threshold", 50))
 
             # Перерисовываем canvas
             self.redraw_canvas()
@@ -849,9 +851,11 @@ class MainWindow:
         
         try:
             # Вызываем алгоритм распознавания
+            threshold = self.info_panel.get_threshold()
             triangle_points = auto_detect_triangle(
                 self.original_pil_image, 
-                self.current_cone_type
+                self.current_cone_type,
+                threshold
             )
             
             if triangle_points is None:

@@ -80,6 +80,17 @@ class InfoPanel:
         self.k_den_var = tk.StringVar(value="1.7")
         self.k_den_entry = ttk.Entry(kden_frame, textvariable=self.k_den_var, width=8, justify='right')
         self.k_den_entry.pack(side='right')
+        
+        ttk.Separator(self.frame, orient='horizontal').pack(fill='x', pady=10)
+        ttk.Label(self.frame, text="Авто-построение:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(0, 5))
+        # Порог бинаризации
+        threshold_frame = ttk.Frame(self.frame)
+        threshold_frame.pack(fill='x', pady=5)
+        
+        ttk.Label(threshold_frame, text="Порог бинаризации:").pack(side='left')
+        self.threshold_var = tk.StringVar(value="50")
+        self.threshold_entry = ttk.Entry(threshold_frame, textvariable=self.threshold_var, width=8, justify='right')
+        self.threshold_entry.pack(side='right')
 
         ttk.Separator(self.frame, orient='horizontal').pack(fill='x', pady=10)
 
@@ -218,6 +229,16 @@ class InfoPanel:
         """Установка коэффициента плотности"""
         self.k_den_var.set(str(k_den))
     
+    def get_threshold(self):
+        """Получение порога бинаризации из поля ввода"""
+        try:
+            return int(self.threshold_var.get())
+        except ValueError:
+            return 50
+    
+    def set_threshold(self, threshold):
+        """Установка порога бинаризации"""
+        self.threshold_var.set(str(threshold))
 
     def pack(self, **kwargs):
         """Упаковка панели"""

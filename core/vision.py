@@ -159,13 +159,14 @@ def detect_cone_zif(image: Image.Image, roi_config: tuple[int, int, int, int] | 
 
 
 
-def auto_detect_triangle(image: Image.Image, cone_type: str) -> list[tuple[float, float]] | None:
+def auto_detect_triangle(image: Image.Image, cone_type: str, threshold: int | None = None) -> list[tuple[float, float]] | None:
     """
     Автоматическое построение треугольника на основе типа конуса.
     
     Args:
         image: PIL изображение
         cone_type: Тип конуса ("ZIF1" или "ZIF2")
+        threshold: Порог бинаризации (если None, используется значение из конфигурации)
     
     Returns:
         Список из 3 точек [(x1, y1), (x2, y2), (x3, y3)] или None
@@ -174,11 +175,15 @@ def auto_detect_triangle(image: Image.Image, cone_type: str) -> list[tuple[float
     # cone_type = "ZIF2"
 
     if cone_type == "ZIF1":
+        # Используем переданный threshold или значение из конфигурации
+        thresh = threshold if threshold is not None else CAM_CONE_ZIF1.get("threshold", 50)
         return detect_cone_zif(image, CAM_CONE_ZIF1.get("roi", None), CAM_CONE_ZIF1.get("cone_center", []), 
-            CAM_CONE_ZIF1.get("threshold", 50))
+            thresh)
     elif cone_type == "ZIF2":
+        # Используем переданный threshold или значение из конфигурации
+        thresh = threshold if threshold is not None else CAM_CONE_ZIF2.get("threshold", 80)
         return detect_cone_zif(image, CAM_CONE_ZIF2.get("roi", None), CAM_CONE_ZIF2.get("cone_center", []), 
-            CAM_CONE_ZIF2.get("threshold", 80))
+            thresh)
     else:
         app_logger.error(f"Unknown cone type: {cone_type}")
         return None
