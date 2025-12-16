@@ -16,3 +16,6 @@ output/
 .qoder/
 
 tmp/
+
+# Configuration file (user-specific settings)
+config.json

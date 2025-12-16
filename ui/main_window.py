@@ -121,8 +121,8 @@ class MainWindow:
         self.h_scrollbar.config(command=self.canvas.xview)
         self.v_scrollbar.config(command=self.canvas.yview)
 
-        # Панель информации
-        self.info_panel = InfoPanel(main_frame)
+        # Панель информации (передаём config)
+        self.info_panel = InfoPanel(main_frame, config=self.config)
         self.info_panel.pack(side='right', fill='y', padx=(0, 0))
 
         # Статус бар
@@ -172,27 +172,33 @@ class MainWindow:
         if button_type == 'ZIF1':
             # Устанавливаем тип конуса
             self.current_cone_type = "ZIF1"
+            self.info_panel.set_current_cone_type("ZIF1")
             # Используем IP и имя канала из конфигурации
-            trassir_ip = CAM_CONE_ZIF1["trassir_ip"]
-            channel_name = CAM_CONE_ZIF1["chanel_name"]
-            pixel_size_m = CAM_CONE_ZIF1["pixel_size_m"]
+            cam_config = self.config.get("CAM_CONE_ZIF1", {})
+            trassir_ip = cam_config.get("trassir_ip", "10.100.59.10")
+            channel_name = cam_config.get("chanel_name", "ЗИФ-1 19. Конус Руда")
+            pixel_size_m = cam_config.get("pixel_size_m", 0.091)
             self._setup_trassir(trassir_ip)
             self._load_trassir_screenshot(channel_name, pixel_size_m)
         elif button_type == 'ZIF2':
             # Устанавливаем тип конуса
             self.current_cone_type = "ZIF2"
+            self.info_panel.set_current_cone_type("ZIF2")
             # Используем IP и имя канала из конфигурации
-            trassir_ip = CAM_CONE_ZIF2["trassir_ip"]
-            channel_name = CAM_CONE_ZIF2["chanel_name"]
-            pixel_size_m = CAM_CONE_ZIF2["pixel_size_m"]
+            cam_config = self.config.get("CAM_CONE_ZIF2", {})
+            trassir_ip = cam_config.get("trassir_ip", "10.100.72.14")
+            channel_name = cam_config.get("chanel_name", "ККД-2 115. Конус")
+            pixel_size_m = cam_config.get("pixel_size_m", 0.16)
             self._setup_trassir(trassir_ip)
             self._load_trassir_screenshot(channel_name, pixel_size_m)
         else:
             # По умолчанию загружаем скриншот для ЗИФ1
             self.current_cone_type = "ZIF1"
-            trassir_ip = CAM_CONE_ZIF1["trassir_ip"]
-            channel_name = CAM_CONE_ZIF1["chanel_name"]
-            pixel_size_m = CAM_CONE_ZIF1["pixel_size_m"]
+            self.info_panel.set_current_cone_type("ZIF1")
+            cam_config = self.config.get("CAM_CONE_ZIF1", {})
+            trassir_ip = cam_config.get("trassir_ip", "10.100.59.10")
+            channel_name = cam_config.get("chanel_name", "ЗИФ-1 19. Конус Руда")
+            pixel_size_m = cam_config.get("pixel_size_m", 0.091)
             self._setup_trassir(trassir_ip)
             self._load_trassir_screenshot(channel_name, pixel_size_m)
 
@@ -560,13 +566,15 @@ class MainWindow:
             
             # Устанавливаем коэффициенты из конфигурации камеры
             if self.current_cone_type == "ZIF1":
-                self.info_panel.set_k_vol(CAM_CONE_ZIF1.get("k_vol", 1.0))
-                self.info_panel.set_k_den(CAM_CONE_ZIF1.get("k_den", 1.7))
-                self.info_panel.set_threshold(CAM_CONE_ZIF1.get("threshold", 50))
+                cam_config = self.config.get("CAM_CONE_ZIF1", {})
+                self.info_panel.set_k_vol(cam_config.get("k_vol", 1.0))
+                self.info_panel.set_k_den(cam_config.get("k_den", 1.7))
+                self.info_panel.set_threshold(cam_config.get("threshold", 50))
             elif self.current_cone_type == "ZIF2":
-                self.info_panel.set_k_vol(CAM_CONE_ZIF2.get("k_vol", 1.0))
-                self.info_panel.set_k_den(CAM_CONE_ZIF2.get("k_den", 1.7))
-                self.info_panel.set_threshold(CAM_CONE_ZIF2.get("threshold", 50))
+                cam_config = self.config.get("CAM_CONE_ZIF2", {})
+                self.info_panel.set_k_vol(cam_config.get("k_vol", 1.0))
+                self.info_panel.set_k_den(cam_config.get("k_den", 1.7))
+                self.info_panel.set_threshold(cam_config.get("threshold", 50))
 
             # Перерисовываем canvas
             self.redraw_canvas()
@@ -852,10 +860,12 @@ class MainWindow:
         try:
             # Вызываем алгоритм распознавания
             threshold = self.info_panel.get_threshold()
+            cam_config = self.config.get(f"CAM_CONE_{self.current_cone_type}", {})
             triangle_points = auto_detect_triangle(
                 self.original_pil_image, 
                 self.current_cone_type,
-                threshold
+                threshold,
+                cam_config
             )
             
             if triangle_points is None:

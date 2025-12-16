@@ -7,8 +7,10 @@ from utils.logger import app_logger
 
 
 class InfoPanel:
-    def __init__(self, parent):
+    def __init__(self, parent, config=None):
         self.frame = ttk.LabelFrame(parent, text="Информация", padding=10)
+        self.config = config  # Ссылка на объект конфигурации
+        self.current_cone_type = None  # Текущий тип конуса
         self._create_widgets()
         # Callback for Trassir load button (set by MainWindow)
         self._trassir_callback = None
@@ -22,6 +24,9 @@ class InfoPanel:
         self.volume_var = tk.StringVar(value="Объем: -")
         self.mass_var = tk.StringVar(value="Масса: -")
         self.parameters_var = tk.StringVar(value="Параметры конуса: -")
+        
+        # Устанавливаем trace на изменения полей ввода
+        self._setup_config_traces()
 
     def _create_widgets(self):
         """Создание виджетов панели"""
@@ -239,6 +244,59 @@ class InfoPanel:
     def set_threshold(self, threshold):
         """Установка порога бинаризации"""
         self.threshold_var.set(str(threshold))
+    
+    def set_current_cone_type(self, cone_type):
+        """Установка текущего типа конуса"""
+        self.current_cone_type = cone_type
+        app_logger.debug(f"InfoPanel: current cone type set to {cone_type}")
+    
+    def _setup_config_traces(self):
+        """Устанавливает отслеживание изменений полей ввода"""
+        # Отслеживаем изменения в полях ввода
+        self.pixel_size_var_zif1.trace_add('write', self._on_pixel_size_changed)
+        self.k_vol_var.trace_add('write', self._on_k_vol_changed)
+        self.k_den_var.trace_add('write', self._on_k_den_changed)
+        self.threshold_var.trace_add('write', self._on_threshold_changed)
+    
+    def _on_pixel_size_changed(self, *args):
+        """Обработчик изменения размера пикселя"""
+        if self.config and self.current_cone_type:
+            try:
+                pixel_size = float(self.pixel_size_var_zif1.get())
+                camera_name = f"CAM_CONE_{self.current_cone_type}"
+                self.config.update_camera_config(camera_name, "pixel_size_m", pixel_size)
+            except ValueError:
+                pass  # Некорректное значение
+    
+    def _on_k_vol_changed(self, *args):
+        """Обработчик изменения коэффициента объёма"""
+        if self.config and self.current_cone_type:
+            try:
+                k_vol = float(self.k_vol_var.get())
+                camera_name = f"CAM_CONE_{self.current_cone_type}"
+                self.config.update_camera_config(camera_name, "k_vol", k_vol)
+            except ValueError:
+                pass
+    
+    def _on_k_den_changed(self, *args):
+        """Обработчик изменения коэффициента плотности"""
+        if self.config and self.current_cone_type:
+            try:
+                k_den = float(self.k_den_var.get())
+                camera_name = f"CAM_CONE_{self.current_cone_type}"
+                self.config.update_camera_config(camera_name, "k_den", k_den)
+            except ValueError:
+                pass
+    
+    def _on_threshold_changed(self, *args):
+        """Обработчик изменения порога бинаризации"""
+        if self.config and self.current_cone_type:
+            try:
+                threshold = int(self.threshold_var.get())
+                camera_name = f"CAM_CONE_{self.current_cone_type}"
+                self.config.update_camera_config(camera_name, "threshold", threshold)
+            except ValueError:
+                pass
 
     def pack(self, **kwargs):
         """Упаковка панели"""
