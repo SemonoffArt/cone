@@ -5,6 +5,7 @@ import tkinter as tk
 import tkinter.messagebox
 from core.image_loader import ImageLoader
 from utils.constants import VERSION, APP_NAME, DESCRIPTION, GITHUB_URL, AUTHOR, WEBSITE, EMAIL
+from .settings_dialog import SettingsDialog
 
 
 
@@ -20,6 +21,8 @@ class Menu:
         self.file_menu.add_separator()
         self.file_menu.add_command(label="Конус ЗИФ1", command=self.app.load_cone_zif1)
         self.file_menu.add_command(label="Конус ЗИФ2", command=self.app.load_cone_zif2)
+        self.file_menu.add_separator()
+        self.file_menu.add_command(label="Настройки", command=self.open_settings)
         self.file_menu.add_separator()
         self.file_menu.add_command(label="Выход", command=parent.quit)
         self.menu_bar.add_cascade(label="Файл", menu=self.file_menu)
@@ -61,3 +64,7 @@ GitHub:
 {EMAIL}
 """
         tk.messagebox.showinfo("О программе", about_text)
+    
+    def open_settings(self):
+        """Открыть окно настроек"""
+        SettingsDialog(self.app.root, self.app.config)
