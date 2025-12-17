@@ -157,6 +157,13 @@ class InfoPanel:
         self.volume_label.config(text=volume_text)
         self.mass_label.config(text=mass_text)
         self.parameters_label.config(text=params_text)
+    
+    def clear_cone_info(self):
+        """Очистка информации о конусе (объём, масса, параметры)"""
+        self.volume_label.config(text="Объем: -")
+        self.mass_label.config(text="Масса: -")
+        self.parameters_label.config(text="Параметры конуса: -")
+        app_logger.debug("Cone info cleared")
 
     def update_image_info(self, image_info):
         """Обновление информации об изображении"""

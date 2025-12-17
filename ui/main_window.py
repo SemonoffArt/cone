@@ -36,8 +36,8 @@ class MainWindow:
         # + 320 для правой панели информации
         # + 20 для отступов
         # + 100 для меню, toolbar и статус-бара
-        window_width = CANVAS_WIDTH + 320 + 20
-        window_height = CANVAS_HEIGHT + 100
+        window_width = CANVAS_WIDTH + 320 + 25
+        window_height = CANVAS_HEIGHT + 132
         self.root.geometry(f"{window_width}x{window_height}")
         
         self._set_window_icon()
@@ -284,6 +284,7 @@ class MainWindow:
         """Очистить треугольник"""
         self.triangle_manager.clear()
         self.canvas_handler.redraw()
+        self.info_panel.clear_cone_info()  # Очищаем информацию об объёме и массе
         self.status_var.set("Треугольник очищен")
         app_logger.info("Triangle cleared")
     

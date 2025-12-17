@@ -2,7 +2,7 @@
 Константы приложения
 """
 
-VERSION = "0.8.0"
+VERSION = "0.8.1"
 APP_NAME = "Cone App"
 DESCRIPTION = "Приложение для построения треугольников и расчета объемов и масс конусов"
 GITHUB_URL = "https://github.com/SemonoffArt/cone"
