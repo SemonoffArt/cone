@@ -1,53 +1,64 @@
 """
-Главное окно приложения
+Главное окно приложения (Refactored)
 """
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox
 import os
-import sys
 
 from .menu import Menu
 from .toolbar import Toolbar
 from .info_panel import InfoPanel
-from core.image_loader import ImageLoader
+from .canvas_handler import CanvasHandler
+from .image_handler import ImageHandler
+from .trassir_handler import TrassirHandler
+from .save_handler import SaveHandler
 from core.triangle import TriangleManager
 from core.cone_calculator import ConeCalculator
 from core.vision import auto_detect_triangle
-from utils.constants import *
+from utils.constants import COLOR_BG, CANVAS_WIDTH, CANVAS_HEIGHT
 from utils.config import Config
 from utils.logger import app_logger
-from utils.trassir import Trassir
-from PIL import Image, ImageTk
-
-
-def get_resource_path(relative_path):
-    """
-    Получить абсолютный путь к ресурсу для работы с PyInstaller
-    
-    Args:
-        relative_path: Относительный путь к ресурсу
-    
-    Returns:
-        Абсолютный путь к ресурсу
-    """
-    try:
-        # PyInstaller создает временную папку и сохраняет путь в _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        # Если не запущено через PyInstaller, используем текущую директорию
-        base_path = os.path.abspath(".")
-    
-    return os.path.join(base_path, relative_path)
+from utils.resources import get_resource_path
 
 
 class MainWindow:
+    """Главное окно приложения"""
+    
     def __init__(self):
+        """Инициализация главного окна"""
         app_logger.info("Initializing main window")
+        
+        # Создание главного окна
         self.root = tk.Tk()
         self.root.title("Конус - расчёт объёма конуса руды на складе")
-        self.root.geometry("1200x700")
         
-        # Используем функцию для получения правильного пути к иконке
+        # Вычисляем размер окна на основе CANVAS_WIDTH и CANVAS_HEIGHT
+        # + 320 для правой панели информации
+        # + 20 для отступов
+        # + 100 для меню, toolbar и статус-бара
+        window_width = CANVAS_WIDTH + 320 + 20
+        window_height = CANVAS_HEIGHT + 100
+        self.root.geometry(f"{window_width}x{window_height}")
+        
+        self._set_window_icon()
+        
+        # Инициализация компонентов
+        self.config = Config()
+        self.triangle_manager = TriangleManager()
+        self.triangle_manager.add_listener(self)
+        
+        # Создание UI
+        self._setup_ui()
+        self._setup_handlers()
+        self._setup_bindings()
+        
+        app_logger.info("Main window initialized successfully")
+        
+        # Автоматическая загрузка скриншота Конус ЗИФ1 при запуске
+        self.root.after(500, self.load_cone_zif1)
+    
+    def _set_window_icon(self):
+        """Установить иконку окна"""
         try:
             icon_path = get_resource_path("resources/icons/pavlik_logo.ico")
             if os.path.exists(icon_path):
@@ -56,57 +67,32 @@ class MainWindow:
                 app_logger.warning(f"Icon file not found: {icon_path}")
         except Exception as e:
             app_logger.warning(f"Failed to set window icon: {e}")
-        
-        # Инициализация компонентов
-        self.config = Config()
-        self.triangle_manager = TriangleManager()
-        self.triangle_manager.add_listener(self)
-
-        self.current_image = None
-        self.image_path = None
-        self.dragging_vertex = None
-        self.trassir_image = None
-        self.zoom_level = 1.0
-        self.original_pil_image = None  # Сохраняем оригинальное изображение PIL
-        # Базовый размер изображения (при zoom=1.0)
-        self.base_image_size = None
-        self.current_image_size = None  # Текущий размер отображаемого изображения
-        self.original_image_size = None  # Размер оригинального изображения
-        self.current_cone_type = None  # Текущий тип конуса ("ZIF1" или "ZIF2")
-
-        self._setup_ui()
-        self._setup_bindings()
-        # Инициализируем trassir как None, подключение будет установлено при первом использовании
-        self.trassir = None
-        app_logger.info("Main window initialized successfully")
-
-        # Автоматическая загрузка скриншота Конус ЗИФ1 при запуске
-        self.root.after(500, self.load_cone_zif1)
-
+    
     def _setup_ui(self):
         """Настройка пользовательского интерфейса"""
         # Меню
         self.menu = Menu(self.root, self)
-
-        # Панель инструментов (Toolbar)
+        
+        # Панель инструментов
         self.toolbar = Toolbar(self.root, self)
         self.toolbar.pack(side='top', fill='x', padx=5, pady=(5,0))
-
+        
         # Основной фрейм
         main_frame = ttk.Frame(self.root)
         main_frame.pack(fill='both', expand=True, padx=10, pady=(0, 5))
-
+        
         # Область изображения
         image_frame = ttk.LabelFrame(main_frame, text="")
         image_frame.pack(side='left', fill='both', expand=True, padx=(0, 10))
-
+        
         # Создаем полосы прокрутки
         self.h_scrollbar = tk.Scrollbar(image_frame, orient='horizontal')
         self.h_scrollbar.pack(side='bottom', fill='x')
-
+        
         self.v_scrollbar = tk.Scrollbar(image_frame, orient='vertical')
         self.v_scrollbar.pack(side='right', fill='y')
-
+        
+        # Холст
         self.canvas = tk.Canvas(
             image_frame,
             bg=COLOR_BG,
@@ -116,189 +102,136 @@ class MainWindow:
             yscrollcommand=self.v_scrollbar.set
         )
         self.canvas.pack(side='left', fill='both', expand=True, padx=5, pady=5)
-
+        
         # Привязываем полосы прокрутки к canvas
         self.h_scrollbar.config(command=self.canvas.xview)
         self.v_scrollbar.config(command=self.canvas.yview)
-
-        # Панель информации (передаём config)
+        
+        # Панель информации
         self.info_panel = InfoPanel(main_frame, config=self.config)
         self.info_panel.pack(side='right', fill='y', padx=(0, 0))
-
+        
         # Статус бар
         self.status_var = tk.StringVar(value="Готов к работе")
         status_bar = ttk.Label(
-            self.root, textvariable=self.status_var, relief='sunken')
+            self.root, textvariable=self.status_var, relief='sunken'
+        )
         status_bar.pack(side='bottom', fill='x')
-
+    
+    def _setup_handlers(self):
+        """Инициализация обработчиков"""
+        # Canvas handler
+        self.canvas_handler = CanvasHandler(self.canvas, self.triangle_manager, self.info_panel)
+        
+        # Image handler
+        self.image_handler = ImageHandler(
+            self.canvas_handler, 
+            self.info_panel, 
+            self.status_var
+        )
+        
+        # Trassir handler
+        self.trassir_handler = TrassirHandler(
+            self.config,
+            self.image_handler,
+            self.info_panel
+        )
+        
+        # Save handler
+        self.save_handler = SaveHandler(
+            self.canvas_handler,
+            self.image_handler,
+            self.triangle_manager,
+            self.info_panel,
+            self.status_var
+        )
+    
     def _setup_bindings(self):
         """Настройка обработчиков событий"""
+        # События холста
         self.canvas.bind("<Button-1>", self.on_canvas_click)
         self.canvas.bind("<B1-Motion>", self.on_canvas_drag)
         self.canvas.bind("<ButtonRelease-1>", self.on_canvas_release)
         self.canvas.bind("<Motion>", self.on_canvas_motion)
-
-        # Обновление информации при изменении размера пикселя
-        self.info_panel.pixel_size_var_zif1.trace(
-            'w', self.on_pixel_size_changed)
+        self.canvas.bind("<Configure>", self.on_canvas_resize)
         
-        # Обновление при изменении коэффициентов
+        # Обновление информации при изменении параметров
+        self.info_panel.pixel_size_var_zif1.trace('w', self.on_pixel_size_changed)
         self.info_panel.k_vol_var.trace('w', lambda *args: self.on_triangle_changed())
         self.info_panel.k_den_var.trace('w', lambda *args: self.on_triangle_changed())
-
+        
         # Горячие клавиши для масштабирования
-        self.root.bind("<plus>", lambda e: self.zoom_in())  # +
-        # = (тоже + без Shift)
+        self.root.bind("<plus>", lambda e: self.zoom_in())
         self.root.bind("<equal>", lambda e: self.zoom_in())
-        self.root.bind("<minus>", lambda e: self.zoom_out())  # -
-        # + на цифровой клавиатуре
+        self.root.bind("<minus>", lambda e: self.zoom_out())
         self.root.bind("<KP_Add>", lambda e: self.zoom_in())
-        # - на цифровой клавиатуре
         self.root.bind("<KP_Subtract>", lambda e: self.zoom_out())
-
-        # Обработка изменения размера окна
-        self.canvas.bind("<Configure>", self.on_canvas_resize)
-
-    def _setup_trassir(self, trassir_ip='10.100.59.11'):
-        """Настройка подключения к Trassir"""
-        try:
-            self.trassir = Trassir(ip=trassir_ip)
-        except Exception as e:
-            app_logger.error(f"Failed to initialize Trassir connection: {e}")
-            self.trassir = None
-
-    def _on_trassir_click(self, button_type='ZIF1'):
-        """Обработка нажатия на кнопку Trassir"""
-        if button_type == 'ZIF1':
-            # Устанавливаем тип конуса
-            self.current_cone_type = "ZIF1"
-            self.info_panel.set_current_cone_type("ZIF1")
-            # Используем IP и имя канала из конфигурации
-            cam_config = self.config.get("CAM_CONE_ZIF1", {})
-            trassir_ip = cam_config.get("trassir_ip", "10.100.59.10")
-            channel_name = cam_config.get("chanel_name", "ЗИФ-1 19. Конус Руда")
-            pixel_size_m = cam_config.get("pixel_size_m", 0.091)
-            self._setup_trassir(trassir_ip)
-            self._load_trassir_screenshot(channel_name, pixel_size_m)
-        elif button_type == 'ZIF2':
-            # Устанавливаем тип конуса
-            self.current_cone_type = "ZIF2"
-            self.info_panel.set_current_cone_type("ZIF2")
-            # Используем IP и имя канала из конфигурации
-            cam_config = self.config.get("CAM_CONE_ZIF2", {})
-            trassir_ip = cam_config.get("trassir_ip", "10.100.72.14")
-            channel_name = cam_config.get("chanel_name", "ККД-2 115. Конус")
-            pixel_size_m = cam_config.get("pixel_size_m", 0.16)
-            self._setup_trassir(trassir_ip)
-            self._load_trassir_screenshot(channel_name, pixel_size_m)
-        else:
-            # По умолчанию загружаем скриншот для ЗИФ1
-            self.current_cone_type = "ZIF1"
-            self.info_panel.set_current_cone_type("ZIF1")
-            cam_config = self.config.get("CAM_CONE_ZIF1", {})
-            trassir_ip = cam_config.get("trassir_ip", "10.100.59.10")
-            channel_name = cam_config.get("chanel_name", "ЗИФ-1 19. Конус Руда")
-            pixel_size_m = cam_config.get("pixel_size_m", 0.091)
-            self._setup_trassir(trassir_ip)
-            self._load_trassir_screenshot(channel_name, pixel_size_m)
-
+    
+    # ==================== Обработчики событий холста ====================
+    
     def on_canvas_click(self, event):
-        """Обработка клика на canvas"""
-        if not self.current_image:
-            self.status_var.set("Сначала загрузите изображение")
-            return
-
-        # Преобразуем координаты с учетом прокрутки
-        canvas_x = self.canvas.canvasx(event.x)
-        canvas_y = self.canvas.canvasy(event.y)
-
-        # Проверяем, не кликаем ли на существующую вершину
-        vertex_index = self.triangle_manager.get_vertex_at_position(
-            canvas_x, canvas_y)
+        """Обработка клика по холсту"""
+        x, y = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
+        
+        # Проверяем, кликнули ли на вершину
+        vertex_index = self.canvas_handler.find_vertex_at(x, y)
+        
         if vertex_index is not None:
-            self.dragging_vertex = vertex_index
-            return
-
-        # Добавляем новую вершину
-        self.triangle_manager.add_vertex(canvas_x, canvas_y)
-        self.redraw_canvas()
-
-        if self.triangle_manager.is_complete():
-            self.status_var.set(
-                "Треугольник построен. Можно перемещать вершины")
+            # Начинаем перетаскивание вершины
+            self.canvas_handler.start_drag(vertex_index)
         else:
-            self.status_var.set(
-                f"Добавлена вершина {len(self.triangle_manager.vertices)}/3")
-
+            # Добавляем новую вершину
+            if not self.triangle_manager.is_complete():
+                self.triangle_manager.add_vertex(x, y)  # Передаём x и y отдельно
+                vertex_count = len(self.triangle_manager.vertices)
+                self.status_var.set(f"Добавлена вершина {vertex_count}/3")
+                
+                if self.triangle_manager.is_complete():
+                    self.status_var.set("Треугольник построен")
+    
     def on_canvas_drag(self, event):
-        """Обработка перетаскивания на canvas"""
-        if self.dragging_vertex is not None and self.current_image:
-            # Преобразуем координаты с учетом прокрутки
-            canvas_x = self.canvas.canvasx(event.x)
-            canvas_y = self.canvas.canvasy(event.y)
-            self.triangle_manager.update_vertex(
-                self.dragging_vertex, canvas_x, canvas_y)
-            self.redraw_canvas()
-
+        """Обработка перетаскивания на холсте"""
+        x, y = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
+        self.canvas_handler.drag_vertex(x, y)
+    
     def on_canvas_release(self, event):
         """Обработка отпускания кнопки мыши"""
-        self.dragging_vertex = None
-
+        self.canvas_handler.stop_drag()
+    
     def on_canvas_motion(self, event):
-        """Обработка движения мыши над canvas"""
-        if not self.current_image:
-            return
-
-        # Преобразуем координаты с учетом прокрутки
-        canvas_x = self.canvas.canvasx(event.x)
-        canvas_y = self.canvas.canvasy(event.y)
-
-        # Изменение курсора при наведении на вершину
-        vertex_index = self.triangle_manager.get_vertex_at_position(
-            canvas_x, canvas_y)
+        """Обработка движения мыши над холстом"""
+        x, y = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
+        vertex_index = self.canvas_handler.find_vertex_at(x, y)
+        self.canvas_handler.set_hovered_vertex(vertex_index)
+        
+        # Изменяем курсор при наведении на вершину
         if vertex_index is not None:
             self.canvas.config(cursor="hand2")
         else:
             self.canvas.config(cursor="")
-
-    def on_pixel_size_changed(self, *args):
-        """Обработка изменения размера пикселя"""
-        try:
-            new_size = self.info_panel.get_pixel_size()
-            if new_size > 0:
-                self.config.set_pixel_size(new_size)
-                self.triangle_manager._update_sides(new_size)
-                self.on_triangle_changed()
-        except ValueError:
-            pass
-
+    
     def on_canvas_resize(self, event):
-        """Обработка изменения размера canvas"""
-        if not self.original_pil_image:
-            return
-
+        """Обработка изменения размера холста"""
         # Проверяем, что размер действительно изменился
         if event.width > 1 and event.height > 1:
-            # Пересчитываем базовый размер и применяем текущий zoom
-            self._recalculate_image_size()
-
+            # Пересчитываем размер изображения
+            self.canvas_handler.resize_to_canvas()
+            self._update_zoom_info()
+    
+    # ==================== Обработчики изменений ====================
+    
     def on_triangle_changed(self):
         """Обработка изменения треугольника"""
-        self.redraw_canvas()
-
+        self.canvas_handler.redraw()
+        
         # Обновление информации
         pixel_size = self.info_panel.get_pixel_size()
-
-        # Вычисляем коэффициент масштаба (от отображаемого к оригиналу)
-        scale_factor = 1.0
-        if self.original_image_size and self.current_image_size:
-            scale_factor = self.original_image_size[0] / \
-                self.current_image_size[0]
-
-        # Обновление информации о треугольниках с учетом масштаба
+        scale_factor = self.canvas_handler.get_scale_factor()
+        
+        # Обновление информации о треугольниках
         self.triangle_manager._update_sides(pixel_size, scale_factor)
         self.info_panel.update_triangle_info(self.triangle_manager.sides)
-
+        
         # Расчет и обновление информации о конусе
         if self.triangle_manager.is_complete():
             k_vol = self.info_panel.get_k_vol()
@@ -309,852 +242,173 @@ class MainWindow:
                 k_vol
             )
             self.info_panel.update_cone_info(cone_params)
-
-    def redraw_canvas(self):
-        """Перерисовка canvas"""
-        self.canvas.delete("all")
-
-        # Отображение изображения
-        if self.current_image:
-            self.canvas.create_image(
-                0, 0, anchor='nw', image=self.current_image)
-            # Устанавливаем область прокрутки
-            self.canvas.config(scrollregion=self.canvas.bbox("all"))
-
-        # Отображение треугольника
-        vertices = self.triangle_manager.vertices
-
-        # Рисуем линии треугольника
-        if len(vertices) >= 2:
-            for i in range(len(vertices)):
-                j = (i + 1) % len(vertices)
-                x1, y1 = vertices[i]
-                x2, y2 = vertices[j]
-
-                # Линия
-                self.canvas.create_line(
-                    x1, y1, x2, y2,
-                    fill=COLOR_TRIANGLE,
-                    width=LINE_WIDTH,
-                    tags="triangle"
-                )
-
-                # Текст с размером стороны (если есть данные)
-                if i < len(self.triangle_manager.sides):
-                    side = self.triangle_manager.sides[i]
-                    mid_x = (x1 + x2) / 2
-                    mid_y = (y1 + y2) / 2
-
-                    # Смещаем текст от линии для лучшей читаемости
-                    text_x = mid_x + 10
-                    text_y = mid_y + 10
-
-                    self.canvas.create_text(
-                        text_x, text_y,
-                        text=f"{side['length_px']:.1f}px\n({side['length_m']:.4f}m)",
-                        fill=COLOR_TEXT,
-                        font=TEXT_FONT,
-                        tags="triangle_text"
-                    )
-
-        # Рисуем вершины
-        for i, (x, y) in enumerate(vertices):
-            color = COLOR_HOVER if i == self.dragging_vertex else COLOR_VERTEX
-            self.canvas.create_oval(
-                x - VERTEX_RADIUS, y - VERTEX_RADIUS,
-                x + VERTEX_RADIUS, y + VERTEX_RADIUS,
-                fill=color,
-                outline=COLOR_TRIANGLE,
-                width=2,
-                tags="vertex"
-            )
-
-    def load_cone_zif1(self):
-        """Загрузка скриншота для Конус ЗИФ1"""
-        self.current_cone_type = "ZIF1"
-        self._on_trassir_click('ZIF1')
-
-    def load_cone_zif2(self):
-        """Загрузка скриншота для Конус ЗИФ2"""
-        self.current_cone_type = "ZIF2"
-        self._on_trassir_click('ZIF2')
-
+    
+    def on_pixel_size_changed(self, *args):
+        """Обработка изменения размера пикселя"""
+        self.on_triangle_changed()
+    
+    # ==================== Публичные методы ====================
+    
+    def run(self):
+        """Запустить главный цикл приложения"""
+        self.root.mainloop()
+    
     def open_image(self):
-        """Открытие изображения"""
-        app_logger.info("Opening image dialog")
-        file_types = ImageLoader.get_supported_formats()
-
-        file_path = filedialog.askopenfilename(
-            title="Выберите изображение",
-            filetypes=file_types
-        )
-
-        if file_path:
-            try:
-                app_logger.info(f"Loading image: {file_path}")
-                self.image_path = file_path
-
-                # Загружаем оригинальное изображение
-                from PIL import Image
-                self.original_pil_image = Image.open(file_path)
-                self.original_image_size = self.original_pil_image.size  # Сохраняем размер оригинала
-                self.zoom_level = 1.0
-
-                # Масштабируем для первоначального отображения
-                canvas_width = self.canvas.winfo_width() or CANVAS_WIDTH
-                canvas_height = self.canvas.winfo_height() or CANVAS_HEIGHT
-
-                display_image = self.original_pil_image.copy()
-                display_image.thumbnail(
-                    (canvas_width, canvas_height), Image.Resampling.LANCZOS)
-                self.current_image = ImageTk.PhotoImage(display_image)
-                image_size = display_image.size
-
-                # Сохраняем базовый и текущий размеры
-                self.base_image_size = image_size
-                self.current_image_size = image_size
-
-                self.redraw_canvas()
-                self.status_var.set(
-                    f"Загружено: {os.path.basename(file_path)} ({image_size[0]}x{image_size[1]})")
-                app_logger.info(
-                    f"Image loaded successfully: {os.path.basename(file_path)} ({image_size[0]}x{image_size[1]})")
-
-                # Обновляем информацию об изображении
-                self._update_image_info()
-                
-                # Подстраиваем размер окна под изображение (масштаб 100%)
-                self._adjust_window_size()
-                
-                # Сбрасываем тип конуса при открытии локального файла
-                # self.current_cone_type = None
-
-            except Exception as e:
-                app_logger.error(f"Failed to load image: {str(e)}")
-                messagebox.showerror(
-                    "Ошибка", f"Не удалось загрузить изображение:\n{str(e)}")
-
+        """Открыть изображение из файла"""
+        self.image_handler.open_image()
+    
     def save_image(self):
-        """Сохранение текущего изображения с наложенным треугольником и метаданными"""
-        if not self.original_pil_image:
-            messagebox.showwarning(
-                "Предупреждение", "Нет загруженного изображения для сохранения")
-            return
-
-        app_logger.info("Opening save image dialog")
-
-        # Определяем формат по умолчанию
-        default_extension = ".png"
-        if self.image_path:
-            # Если изображение было загружено из файла, используем его расширение
-            default_extension = os.path.splitext(self.image_path)[1]
-            default_name = os.path.basename(self.image_path)
-        else:
-            # Для Trassir скриншотов
-            from datetime import datetime
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            default_name = f"screenshot_{timestamp}.png"
-
-        # Диалог сохранения
-        file_path = filedialog.asksaveasfilename(
-            title="Сохранить изображение",
-            initialfile=default_name,
-            defaultextension=default_extension,
-            filetypes=[
-                ("Все поддерживаемые", "*.png *.jpg *.jpeg *.bmp *.gif"),
-                ("PNG", "*.png"),
-                ("JPEG", "*.jpg *.jpeg"),
-                ("BMP", "*.bmp"),
-                ("GIF", "*.gif"),
-                ("Все файлы", "*.*")
-            ]
-        )
-
-        if file_path:
-            try:
-                app_logger.info(f"Saving image to: {file_path}")
-                
-                # Создаём копию изображения для наложения
-                from PIL import ImageDraw, ImageFont
-                from datetime import datetime
-                
-                output_image = self.original_pil_image.copy()
-                draw = ImageDraw.Draw(output_image)
-                
-                # Вычисляем коэффициент масштаба (от отображаемого к оригиналу)
-                scale_factor = 1.0
-                if self.original_image_size and self.current_image_size:
-                    scale_factor = self.original_image_size[0] / self.current_image_size[0]
-                
-                # Наложение треугольника
-                if self.triangle_manager.is_complete():
-                    # Переводим координаты вершин в масштаб оригинального изображения
-                    original_vertices = [
-                        (x * scale_factor, y * scale_factor) 
-                        for x, y in self.triangle_manager.vertices
-                    ]
-                    
-                    # Рисуем линии треугольника
-                    line_width = max(2, int(LINE_WIDTH * scale_factor))
-                    for i in range(3):
-                        start = original_vertices[i]
-                        end = original_vertices[(i + 1) % 3]
-                        draw.line([start, end], fill=COLOR_TRIANGLE, width=line_width)
-                    
-                    # Рисуем вершины
-                    vertex_radius = max(4, int(VERTEX_RADIUS * scale_factor))
-                    for x, y in original_vertices:
-                        draw.ellipse(
-                            [x - vertex_radius, y - vertex_radius, 
-                             x + vertex_radius, y + vertex_radius],
-                            fill=COLOR_VERTEX,
-                            outline=COLOR_TRIANGLE
-                        )
-                    
-                    # Подписываем стороны треугольника (размеры в px и м)
-                    try:
-                        # Загружаем шрифт для подписей сторон
-                        label_font_size = max(10, int(12 * scale_factor))
-                        try:
-                            label_font = ImageFont.truetype("arial.ttf", label_font_size)
-                        except:
-                            label_font = ImageFont.load_default()
-                    except:
-                        label_font = ImageFont.load_default()
-                    
-                    # Получаем информацию о сторонах
-                    pixel_size = self.info_panel.get_pixel_size()
-                    self.triangle_manager._update_sides(pixel_size, scale_factor)
-                    sides = self.triangle_manager.sides
-                    
-                    # Названия сторон
-                    side_names = ['AB', 'BC', 'CA']
-                    
-                    for i in range(3):
-                        if i < len(sides):
-                            # Координаты середины стороны
-                            start = original_vertices[i]
-                            end = original_vertices[(i + 1) % 3]
-                            mid_x = (start[0] + end[0]) / 2
-                            mid_y = (start[1] + end[1]) / 2
-                            
-                            # Текст с размерами
-                            length_px = sides[i]['length_px']
-                            length_m = sides[i]['length_m']
-                            label_text = f"{side_names[i]}: {length_px:.0f}px ({length_m:.2f}м)"
-                            
-                            # Вычисляем смещение для текста (перпендикулярно стороне)
-                            dx = end[0] - start[0]
-                            dy = end[1] - start[1]
-                            length = (dx**2 + dy**2)**0.5
-                            
-                            if length > 0:
-                                # Нормализованный перпендикулярный вектор
-                                perp_x = -dy / length
-                                perp_y = dx / length
-                                
-                                # Смещение текста от линии
-                                offset = max(15, int(20 * scale_factor))
-                                text_x = mid_x + perp_x * offset
-                                text_y = mid_y + perp_y * offset
-                                
-                                # Получаем размер текста для фона
-                                bbox = draw.textbbox((0, 0), label_text, font=label_font)
-                                text_width = bbox[2] - bbox[0]
-                                text_height = bbox[3] - bbox[1]
-                                
-                                # Рисуем полупрозрачный фон для текста
-                                padding = max(3, int(4 * scale_factor))
-                                bg_box = [
-                                    text_x - padding,
-                                    text_y - padding,
-                                    text_x + text_width + padding,
-                                    text_y + text_height + padding
-                                ]
-                                
-                                # Создаём временный слой для фона
-                                temp_overlay = Image.new('RGBA', output_image.size, (0, 0, 0, 0))
-                                temp_draw = ImageDraw.Draw(temp_overlay)
-                                temp_draw.rectangle(bg_box, fill=(255, 255, 255, 200))  # Белый полупрозрачный
-                                
-                                # Накладываем фон
-                                output_image = output_image.convert('RGBA')
-                                output_image = Image.alpha_composite(output_image, temp_overlay)
-                                output_image = output_image.convert('RGB')
-                                draw = ImageDraw.Draw(output_image)
-                                
-                                # Рисуем текст
-                                draw.text((text_x, text_y), label_text, fill=(0, 0, 0), font=label_font)
-                
-                # Подготовка текста для наложения
-                text_lines = []
-                
-                # Дата-время
-                now = datetime.now()
-                datetime_str = now.strftime("%Y-%m-%d %H:%M:%S")
-                text_lines.append(datetime_str)
-                
-                # Информация о конусе
-                if self.triangle_manager.is_complete():
-                    pixel_size = self.info_panel.get_pixel_size()
-                    k_vol = self.info_panel.get_k_vol()
-                    k_den = self.info_panel.get_k_den()
-                    
-                    cone_params = ConeCalculator.get_cone_parameters(
-                        self.triangle_manager.vertices,
-                        pixel_size,
-                        scale_factor,
-                        k_vol
-                    )
-                    
-                    if cone_params['volume'] > 0:
-                        volume = cone_params['volume']
-                        mass = volume * k_den
-                        radius = cone_params['radius_m']
-                        height = cone_params['height_m']
-                        
-                        # Добавляем информацию о конусе
-                        text_lines.append("")
-                        if self.current_cone_type:
-                            text_lines.append(f"Конус {self.current_cone_type}")
-                        text_lines.append(f"Объём: {volume:.2f} м³")
-                        text_lines.append(f"Масса: {mass:.2f} т")
-                        text_lines.append(f"Радиус: {radius:.2f} м")
-                        text_lines.append(f"Высота: {height:.2f} м")
-                        
-                        # Добавляем параметры через разделитель
-                        text_lines.append("")
-                        text_lines.append("-" * 30)
-                        text_lines.append(f"Размер пикселя: {pixel_size:.4f} м")
-                        text_lines.append(f"Коэффициент объёма: {k_vol:.2f}")
-                        text_lines.append(f"Плотность: {k_den:.2f} т/м³")
-                
-                # Наложение текста в левый нижний угол
-                if text_lines:
-                    try:
-                        # Пытаемся загрузить шрифт (TrueType)
-                        font_size = max(12, int(14 * scale_factor))
-                        try:
-                            font = ImageFont.truetype("arial.ttf", font_size)
-                        except:
-                            # Если не нашелся arial, используем стандартный
-                            font = ImageFont.load_default()
-                    except:
-                        font = ImageFont.load_default()
-                    
-                    # Размеры изображения
-                    img_width, img_height = output_image.size
-                    
-                    # Отступы
-                    margin = max(10, int(15 * scale_factor))
-                    line_spacing = max(2, int(5 * scale_factor))
-                    
-                    # Вычисляем высоту текста
-                    total_height = 0
-                    max_width = 0
-                    for line in text_lines:
-                        bbox = draw.textbbox((0, 0), line, font=font)
-                        line_height = bbox[3] - bbox[1]
-                        line_width = bbox[2] - bbox[0]
-                        total_height += line_height + line_spacing
-                        max_width = max(max_width, line_width)
-                    
-                    # Позиция текста (левый нижний угол)
-                    text_x = margin
-                    text_y = img_height - total_height - margin
-                    
-                    # Рисуем полупрозрачный фон для текста
-                    padding = max(5, int(8 * scale_factor))
-                    bg_box = [
-                        text_x - padding,
-                        text_y - padding,
-                        text_x + max_width + padding * 2,
-                        img_height - margin + padding
-                    ]
-                    
-                    # Создаём полупрозрачный слой
-                    overlay = Image.new('RGBA', output_image.size, (0, 0, 0, 0))
-                    overlay_draw = ImageDraw.Draw(overlay)
-                    overlay_draw.rectangle(bg_box, fill=(0, 0, 0, 180))  # Чёрный с прозрачностью
-                    
-                    # Накладываем фон
-                    output_image = output_image.convert('RGBA')
-                    output_image = Image.alpha_composite(output_image, overlay)
-                    output_image = output_image.convert('RGB')
-                    draw = ImageDraw.Draw(output_image)
-                    
-                    # Рисуем текст
-                    current_y = text_y
-                    for line in text_lines:
-                        draw.text((text_x, current_y), line, fill=(255, 255, 255), font=font)
-                        bbox = draw.textbbox((0, 0), line, font=font)
-                        line_height = bbox[3] - bbox[1]
-                        current_y += line_height + line_spacing
-                
-                # Сохраняем изображение
-                output_image.save(file_path)
-                self.status_var.set(
-                    f"Изображение сохранено: {os.path.basename(file_path)}")
-                app_logger.info(f"Image saved successfully with overlay: {file_path}")
-                messagebox.showinfo(
-                    "Успех", f"Изображение сохранено:\n{file_path}")
-            except Exception as e:
-                app_logger.error(f"Failed to save image: {str(e)}")
-                messagebox.showerror(
-                    "Ошибка", f"Не удалось сохранить изображение:\n{str(e)}")
-
-    def _load_trassir_screenshot(self, channel_name, pixel_size_m=None):
-        """Загрузка скриншота с Trassir и отображение его в canvas"""
-        app_logger.info(
-            f"Loading Trassir screenshot for channel: {channel_name}")
-
-        if not self.trassir:
-            app_logger.error("Trassir connection not initialized")
-            messagebox.showerror(
-                "Ошибка", "Подключение к Trassir не установлено")
-            return
-
-        try:
-            # Получаем список каналов
-            self.trassir.update_channels_cache()
-            app_logger.debug(
-                f"Available channels: {len(self.trassir.channels)}")
-
-            # Извлекаем GUID канала по имени
-            channel_info = self.trassir.get_channel_by_name(channel_name)
-            if not channel_info:
-                app_logger.error(f"Channel not found: {channel_name}")
-                messagebox.showerror(
-                    "Ошибка", f"Канал не найден: {channel_name}")
-                return
-
-            channel_guid = channel_info['guid']
-            app_logger.info(
-                f"Found channel {channel_name} with GUID: {channel_guid}")
-
-            # Получаем скриншот канала
-            screenshot = self.trassir.get_channel_screenshot(channel_guid)
-            if not screenshot:
-                app_logger.error(
-                    f"Failed to get screenshot for channel: {channel_name}")
-                messagebox.showerror(
-                    "Ошибка", f"Не удалось получить скриншот канала: {channel_name}")
-                return
-
-            # Масштабируем изображение до ширины 1920px если нужно
-            original_width, original_height = screenshot.size
-            app_logger.info(f"Original screenshot size: {original_width}x{original_height}")
-            
-            if original_width != 1920:
-                # Вычисляем новую высоту сохраняя пропорции
-                scale_factor = 1920 / original_width
-                new_height = int(original_height * scale_factor)
-                screenshot = screenshot.resize(
-                    (1920, new_height), Image.Resampling.LANCZOS)
-                app_logger.info(f"Screenshot resized to: 1920x{new_height}")
-
-            # Преобразуем PIL Image в PhotoImage для Tkinter
-            # Масштабируем изображение под размер canvas
-            canvas_width = self.canvas.winfo_width() or CANVAS_WIDTH
-            canvas_height = self.canvas.winfo_height() or CANVAS_HEIGHT
-
-            # Сохраняем оригинальное изображение
-            self.original_pil_image = screenshot.copy()
-            self.original_image_size = self.original_pil_image.size  # Сохраняем размер оригинала
-            self.zoom_level = 1.0
-
-            # Изменяем размер изображения
-            screenshot = screenshot.resize(
-                (canvas_width, canvas_height), Image.Resampling.LANCZOS)
-            self.trassir_image = ImageTk.PhotoImage(screenshot)
-
-            # Сохраняем базовый и текущий размеры
-            self.base_image_size = (canvas_width, canvas_height)
-            self.current_image_size = (canvas_width, canvas_height)
-
-            # Устанавливаем изображение
-            self.current_image = self.trassir_image
-            self.image_path = None  # Не сохраняем путь для Trassir изображений
-
-            # Устанавливаем размер пикселя если был передан
-            if pixel_size_m is not None:
-                self.info_panel.set_pixel_size(pixel_size_m)
-                self.config.set_pixel_size(pixel_size_m)
-                self.triangle_manager._update_sides(pixel_size_m)
-            
-            # Устанавливаем коэффициенты из конфигурации камеры
-            if self.current_cone_type == "ZIF1":
-                cam_config = self.config.get("CAM_CONE_ZIF1", {})
-                self.info_panel.set_k_vol(cam_config.get("k_vol", 1.0))
-                self.info_panel.set_k_den(cam_config.get("k_den", 1.7))
-                self.info_panel.set_threshold(cam_config.get("threshold", 50))
-            elif self.current_cone_type == "ZIF2":
-                cam_config = self.config.get("CAM_CONE_ZIF2", {})
-                self.info_panel.set_k_vol(cam_config.get("k_vol", 1.0))
-                self.info_panel.set_k_den(cam_config.get("k_den", 1.7))
-                self.info_panel.set_threshold(cam_config.get("threshold", 50))
-
-            # Перерисовываем canvas
-            self.redraw_canvas()
-            self.status_var.set(f"Загружен скриншот: {channel_name}")
-            app_logger.info(
-                f"Successfully loaded screenshot for channel: {channel_name}")
-
-            # Обновляем информацию об изображении
-            self._update_image_info()
-            
-            # Подстраиваем размер окна под изображение (масштаб 100%)
-            self._adjust_window_size()
-
-        except Exception as e:
-            app_logger.error(f"Error loading Trassir screenshot: {e}")
-            messagebox.showerror(
-                "Ошибка", f"Ошибка при загрузке скриншота:\n{str(e)}")
-
+        """Сохранить изображение"""
+        current_cone_type = self.trassir_handler.get_current_cone_type()
+        self.save_handler.save_image(current_cone_type)
+    
+    def load_cone_zif1(self):
+        """Загрузить скриншот конуса ЗИФ1"""
+        self.trassir_handler.load_cone_screenshot("ZIF1")
+    
+    def load_cone_zif2(self):
+        """Загрузить скриншот конуса ЗИФ2"""
+        self.trassir_handler.load_cone_screenshot("ZIF2")
+    
     def zoom_in(self):
-        """Увеличение изображения"""
-        if not self.original_pil_image:
-            self.status_var.set("Сначала загрузите изображение")
-            return
-
-        self.zoom_level *= 1.2  # Увеличение на 20%
-        self._apply_zoom()
-        app_logger.info(f"Zoom in: {self.zoom_level:.2f}x")
-        self.status_var.set(f"Масштаб: {self.zoom_level:.2f}x")
-        self._update_image_info()  # Обновляем информацию
-
+        """Увеличить масштаб"""
+        self.canvas_handler.zoom_in()
+        self._update_zoom_info()
+    
     def zoom_out(self):
-        """Уменьшение изображения"""
-        if not self.original_pil_image:
-            self.status_var.set("Сначала загрузите изображение")
-            return
-
-        if self.zoom_level > 0.2:  # Минимальный зум 20%
-            self.zoom_level /= 1.2  # Уменьшение на 20%
-            self._apply_zoom()
-            app_logger.info(f"Zoom out: {self.zoom_level:.2f}x")
-            self.status_var.set(f"Масштаб: {self.zoom_level:.2f}x")
-            self._update_image_info()  # Обновляем информацию
-
-    def _apply_zoom(self):
-        """Применение масштабирования к изображению"""
-        if not self.original_pil_image or not self.base_image_size:
-            return
-
-        # Сохраняем текущие вершины треугольника в относительных координатах (0-1)
-        if self.current_image_size and len(self.triangle_manager.vertices) > 0:
-            relative_vertices = []
-            for x, y in self.triangle_manager.vertices:
-                rel_x = x / self.current_image_size[0]
-                rel_y = y / self.current_image_size[1]
-                relative_vertices.append((rel_x, rel_y))
-        else:
-            relative_vertices = []
-
-        # Вычисляем новый размер
-        new_width = int(self.base_image_size[0] * self.zoom_level)
-        new_height = int(self.base_image_size[1] * self.zoom_level)
-
-        # Создаем масштабированное изображение
-        # Сначала масштабируем оригинал до базового размера, затем применяем zoom
-        canvas_width = self.canvas.winfo_width() or CANVAS_WIDTH
-        canvas_height = self.canvas.winfo_height() or CANVAS_HEIGHT
-
-        # Получаем изображение, масштабированное до базового размера
-        img_copy = self.original_pil_image.copy()
-        img_copy.thumbnail((canvas_width, canvas_height),
-                           Image.Resampling.LANCZOS)
-
-        # Теперь применяем zoom к этому размеру
-        zoomed_width = int(img_copy.width * self.zoom_level)
-        zoomed_height = int(img_copy.height * self.zoom_level)
-
-        zoomed_image = self.original_pil_image.resize(
-            (zoomed_width, zoomed_height), Image.Resampling.LANCZOS)
-        self.current_image = ImageTk.PhotoImage(zoomed_image)
-
-        # Обновляем текущий размер
-        self.current_image_size = (zoomed_width, zoomed_height)
-
-        # Восстанавливаем вершины треугольника в новых координатах
-        if relative_vertices:
-            new_vertices = []
-            for rel_x, rel_y in relative_vertices:
-                new_x = rel_x * self.current_image_size[0]
-                new_y = rel_y * self.current_image_size[1]
-                new_vertices.append((new_x, new_y))
-
-            # Обновляем вершины без уведомления слушателей
-            self.triangle_manager.vertices = new_vertices
-            # Вычисляем коэффициент масштаба
-            scale_factor = 1.0
-            if self.original_image_size and self.current_image_size:
-                scale_factor = self.original_image_size[0] / \
-                    self.current_image_size[0]
-            self.triangle_manager._update_sides(
-                self.info_panel.get_pixel_size(), scale_factor)
-
-        # Перерисовываем
-        self.redraw_canvas()
-
-    def _recalculate_image_size(self):
-        """Перерасчет размера изображения при изменении размера окна"""
-        if not self.original_pil_image:
-            return
-
-        # Сохраняем текущие вершины в относительных координатах
-        if self.current_image_size and len(self.triangle_manager.vertices) > 0:
-            relative_vertices = []
-            for x, y in self.triangle_manager.vertices:
-                rel_x = x / self.current_image_size[0]
-                rel_y = y / self.current_image_size[1]
-                relative_vertices.append((rel_x, rel_y))
-        else:
-            relative_vertices = []
-
-        # Получаем новый размер canvas
-        canvas_width = self.canvas.winfo_width()
-        canvas_height = self.canvas.winfo_height()
-
-        if canvas_width <= 1 or canvas_height <= 1:
-            return
-
-        # Вычисляем новый базовый размер
-        img_copy = self.original_pil_image.copy()
-        img_copy.thumbnail((canvas_width, canvas_height),
-                           Image.Resampling.LANCZOS)
-
-        # Обновляем базовый размер
-        self.base_image_size = img_copy.size
-
-        # Применяем текущий zoom
-        zoomed_width = int(self.base_image_size[0] * self.zoom_level)
-        zoomed_height = int(self.base_image_size[1] * self.zoom_level)
-
-        zoomed_image = self.original_pil_image.resize(
-            (zoomed_width, zoomed_height), Image.Resampling.LANCZOS)
-        self.current_image = ImageTk.PhotoImage(zoomed_image)
-
-        # Обновляем текущий размер
-        self.current_image_size = (zoomed_width, zoomed_height)
-
-        # Восстанавливаем вершины в новых координатах
-        if relative_vertices:
-            new_vertices = []
-            for rel_x, rel_y in relative_vertices:
-                new_x = rel_x * self.current_image_size[0]
-                new_y = rel_y * self.current_image_size[1]
-                new_vertices.append((new_x, new_y))
-
-            # Обновляем вершины
-            self.triangle_manager.vertices = new_vertices
-            # Вычисляем коэффициент масштаба
-            scale_factor = 1.0
-            if self.original_image_size and self.current_image_size:
-                scale_factor = self.original_image_size[0] / \
-                    self.current_image_size[0]
-            self.triangle_manager._update_sides(
-                self.info_panel.get_pixel_size(), scale_factor)
-
-        # Перерисовываем
-        self.redraw_canvas()
-
-    def _update_image_info(self):
-        """Обновление информации об изображении в панели"""
-        if not self.original_pil_image:
-            return
-
-        # Определяем формат
-        image_format = self.original_pil_image.format if self.original_pil_image.format else "Unknown"
-
-        # Определяем источник
-        if self.image_path:
-            source = os.path.basename(self.image_path)
-        else:
-            source = "Trassir скриншот"
-
-        image_info = {
-            'original_size': self.original_image_size,
-            'display_size': self.current_image_size,
-            'format': image_format,
-            'source': source,
-            'zoom_level': self.zoom_level
-        }
-
-        self.info_panel.update_image_info(image_info)
-
-    def _adjust_window_size(self):
-        """Подстраивание размера окна под размер изображения при масштабе 100%"""
-        if not self.original_image_size:
-            return
-        
-        # Получаем параметры экрана
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        
-        # Не делаем окно больше 70% экрана
-        max_window_width = int(screen_width * 0.7)
-        max_window_height = int(screen_height * 0.7)
-        
-        # Оригинальные размеры изображения
-        img_width, img_height = self.original_image_size
-        
-        # Нужные значения для размера окна
-        # Добавляем место для панели информации (правая сторона, около 250 пикселей)
-        canvas_width = min(img_width, max_window_width - 300)
-        canvas_height = min(img_height, max_window_height - 100)  # 100 для меню и статус бара
-        
-        # Общие размеры окна
-        window_width = canvas_width + 320  # +320 для панели
-        window_height = canvas_height + 100  # +100 для меню и статуса
-        
-        # Устанавливаем новые размеры
-        self.root.geometry(f"{window_width}x{window_height}")
-        app_logger.info(f"Window resized to {window_width}x{window_height} for image {img_width}x{img_height}")
-
+        """Уменьшить масштаб"""
+        self.canvas_handler.zoom_out()
+        self._update_zoom_info()
+    
     def clear_triangle(self):
-        """Очистка треугольника"""
+        """Очистить треугольник"""
         self.triangle_manager.clear()
-        self.redraw_canvas()
+        self.canvas_handler.redraw()
         self.status_var.set("Треугольник очищен")
-
-    def copy_cone_volume(self):
-        """Копирование объема и массы конуса в буфер обмена"""
-        if not self.triangle_manager.is_complete():
-            messagebox.showwarning("Предупреждение", "Сначала постройте треугольник")
-            return
-        
-        # Получаем параметры конуса
-        pixel_size = self.info_panel.get_pixel_size()
-        k_vol = self.info_panel.get_k_vol()
-        k_den = self.info_panel.get_k_den()
-        scale_factor = 1.0
-        if self.original_image_size and self.current_image_size:
-            scale_factor = self.original_image_size[0] / self.current_image_size[0]
-        
-        cone_params = ConeCalculator.get_cone_parameters(
-            self.triangle_manager.vertices,
-            pixel_size,
-            scale_factor,
-            k_vol
-        )
-        
-        if cone_params['volume'] > 0:
-            volume_text = f"{cone_params['volume']:.2f}"
-            mass = cone_params['volume'] * k_den
-            mass_text = f"{mass:.2f}"
-            
-            # Формируем текст для буфера (заменяем точки на запятые)
-            clipboard_text = f"{volume_text.replace('.', ',')}\t{mass_text.replace('.', ',')}"
-            
-            self.root.clipboard_clear()
-            self.root.clipboard_append(clipboard_text)
-            self.root.update()  # Обновить буфер
-            self.status_var.set(f"Скопировано: {volume_text} m³, {mass_text} т")
-            app_logger.info(f"Cone volume and mass copied to clipboard: {clipboard_text}")
-        else:
-            messagebox.showwarning("Предупреждение", "Не удалось рассчитать объем")
+        app_logger.info("Triangle cleared")
     
     def auto_build_triangle(self):
-        """Автоматическое построение треугольника на основе компьютерного зрения"""
-        if not self.original_pil_image:
+        """Автоматически построить треугольник"""
+        current_image = self.image_handler.get_current_image()
+        
+        if not current_image:
             messagebox.showwarning(
-                "Предупреждение", 
+                "Предупреждение",
                 "Сначала загрузите изображение"
             )
             return
         
-        # if not self.current_cone_type:
-        #     messagebox.showwarning(
-        #         "Предупреждение", 
-        #         "Автоматическое построение доступно только для снимков Конус ЗИФ1 и ЗИФ2.\n"
-        #         "Загрузите снимок через меню Файл → Конус ЗИФ1 или Конус ЗИФ2."
-        #     )
-        #     return
+        current_cone_type = self.trassir_handler.get_current_cone_type()
         
-        app_logger.info(f"Auto-building triangle for {self.current_cone_type}")
-        self.status_var.set("Распознавание конуса...")
+        if not current_cone_type:
+            messagebox.showwarning(
+                "Предупреждение",
+                "Автоопределение работает только для снимков с Trassir (ЗИФ1 или ЗИФ2)"
+            )
+            return
         
         try:
-            # Вызываем алгоритм распознавания
+            app_logger.info(f"Auto-building triangle for {current_cone_type}")
+            self.status_var.set("Автоматическое построение треугольника...")
+            
+            # Получаем порог бинаризации
             threshold = self.info_panel.get_threshold()
-            cam_config = self.config.get(f"CAM_CONE_{self.current_cone_type}", {})
-            triangle_points = auto_detect_triangle(
-                self.original_pil_image, 
-                self.current_cone_type,
+            
+            # Получаем конфигурацию камеры
+            cam_config = self.config.get(f"CAM_CONE_{current_cone_type}", {})
+            
+            # Запускаем автоопределение
+            vertices = auto_detect_triangle(
+                current_image,
+                current_cone_type,
                 threshold,
                 cam_config
             )
             
-            if triangle_points is None:
-                app_logger.warning(f"Failed to detect triangle for {self.current_cone_type}")
+            if vertices:
+                # Очищаем старый треугольник
+                self.triangle_manager.clear()
+                
+                # Добавляем новые вершины
+                for vertex in vertices:
+                    self.triangle_manager.add_vertex(vertex)
+                
+                self.status_var.set("Треугольник построен автоматически")
+                app_logger.info("Triangle auto-built successfully")
+            else:
+                self.status_var.set("Не удалось автоматически определить треугольник")
                 messagebox.showwarning(
                     "Предупреждение",
-                    f"Не удалось автоматически распознать конус на изображении {self.current_cone_type}.\n"
-                    f"Попробуйте построить треугольник вручную."
+                    "Не удалось автоматически определить контур конуса.\n"
+                    "Попробуйте построить треугольник вручную."
                 )
-                self.status_var.set("Распознавание не удалось")
-                return
-            
-            # Преобразуем координаты с учетом масштаба изображения
-            if self.original_image_size and self.current_image_size:
-                scale_x = self.current_image_size[0] / self.original_image_size[0]
-                scale_y = self.current_image_size[1] / self.original_image_size[1]
-                
-                scaled_points = [
-                    (x * scale_x, y * scale_y) 
-                    for x, y in triangle_points
-                ]
-            else:
-                scaled_points = triangle_points
-            
-            # Очищаем текущий треугольник
-            self.triangle_manager.vertices.clear()
-            
-            # Устанавливаем новые вершины
-            for x, y in scaled_points:
-                self.triangle_manager.vertices.append((x, y))
-            
-            # Обновляем стороны
-            pixel_size = self.info_panel.get_pixel_size()
-            scale_factor = 1.0
-            if self.original_image_size and self.current_image_size:
-                scale_factor = self.original_image_size[0] / self.current_image_size[0]
-            
-            self.triangle_manager._update_sides(pixel_size, scale_factor)
-            
-            # Перерисовываем canvas и обновляем информацию
-            self.on_triangle_changed()
-            
-            self.status_var.set(f"Треугольник построен автоматически ({self.current_cone_type})")
-            app_logger.info(f"Triangle auto-built successfully for {self.current_cone_type}")
-            
+        
         except Exception as e:
-            app_logger.error(f"Error in auto triangle building: {e}", exc_info=True)
+            app_logger.error(f"Failed to auto-build triangle: {str(e)}")
             messagebox.showerror(
                 "Ошибка",
-                f"Ошибка при автоматическом построении треугольника:\n{str(e)}"
+                f"Ошибка при автоматическом построении:\n{str(e)}"
             )
-            self.status_var.set("Ошибка распознавания")
+            self.status_var.set("Ошибка автопостроения")
     
-    def show_about(self):
-        """Показать информацию о программе"""
-        from utils.constants import VERSION, APP_NAME, DESCRIPTION, GITHUB_URL, AUTHOR, WEBSITE, EMAIL
-        about_text = f"""Cone App
-Версия {VERSION}
-
-{DESCRIPTION}.
-
-GitHub:
-{GITHUB_URL}
-
-{AUTHOR}
-{WEBSITE}
-{EMAIL}
-2025
-"""
-        messagebox.showinfo("О программе", about_text)
-
-    def run(self):
-        """Запуск приложения"""
-        self.root.mainloop()
+    def copy_cone_volume(self):
+        """Скопировать объём и массу конуса в буфер обмена"""
+        if not self.triangle_manager.is_complete():
+            messagebox.showwarning(
+                "Предупреждение",
+                "Сначала постройте треугольник"
+            )
+            return
+        
+        try:
+            # Получаем параметры
+            pixel_size = self.info_panel.get_pixel_size()
+            k_vol = self.info_panel.get_k_vol()
+            k_den = self.info_panel.get_k_den()
+            scale_factor = self.canvas_handler.get_scale_factor()
+            
+            # Вычисляем параметры конуса
+            cone_params = ConeCalculator.get_cone_parameters(
+                self.triangle_manager.vertices,
+                pixel_size,
+                scale_factor,
+                k_vol
+            )
+            
+            volume = cone_params['volume']
+            mass = volume * k_den
+            
+            # Форматируем для Excel (запятая как разделитель, табуляция между значениями)
+            clipboard_text = f"{volume:.2f}\t{mass:.2f}".replace('.', ',')
+            
+            # Копируем в буфер обмена
+            self.root.clipboard_clear()
+            self.root.clipboard_append(clipboard_text)
+            self.root.update()
+            
+            self.status_var.set(f"Скопировано: Объём={volume:.2f} м³, Масса={mass:.2f} т")
+            app_logger.info(f"Copied to clipboard: {clipboard_text}")
+            
+        except Exception as e:
+            app_logger.error(f"Failed to copy cone volume: {str(e)}")
+            messagebox.showerror(
+                "Ошибка",
+                f"Ошибка при копировании:\n{str(e)}"
+            )
+    
+    def _update_zoom_info(self):
+        """Обновить информацию о масштабе"""
+        current_image = self.image_handler.get_current_image()
+        if current_image:
+            # Получаем текущий источник из лейбла
+            source_text = self.info_panel.image_source_label.cget("text")
+            source = source_text.replace("Источник: ", "") if source_text else "Unknown"
+            
+            image_info = {
+                'original_size': current_image.size,
+                'display_size': self.canvas_handler.current_image_size,
+                'format': current_image.format if current_image.format else "Unknown",
+                'source': source,
+                'zoom_level': self.canvas_handler.zoom_level
+            }
+            self.info_panel.update_image_info(image_info)

@@ -3,29 +3,8 @@
 """
 import tkinter as tk
 from tkinter import ttk
-import os
-import sys
 from utils.logger import app_logger
-
-
-def get_resource_path(relative_path):
-    """
-    Получить абсолютный путь к ресурсу для работы с PyInstaller
-    
-    Args:
-        relative_path: Относительный путь к ресурсу
-    
-    Returns:
-        Абсолютный путь к ресурсу
-    """
-    try:
-        # PyInstaller создает временную папку и сохраняет путь в _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        # Если не запущено через PyInstaller, используем текущую директорию
-        base_path = os.path.abspath(".")
-    
-    return os.path.join(base_path, relative_path)
+from utils.resources import get_resource_path
 
 
 class ToolTip:
@@ -117,7 +96,7 @@ class Toolbar:
             icon = tk.PhotoImage(file=icon_path)
             self.toolbar_icons['zif1'] = icon
             btn = ttk.Button(self.frame, image=icon, 
-                           command=lambda: self.app._on_trassir_click('ZIF1'))
+                           command=self.app.load_cone_zif1)
             btn.pack(side='left', padx=2)
             btn.image = icon
             ToolTip(btn, "Загрузить Конус ЗИФ1")
@@ -130,7 +109,7 @@ class Toolbar:
             icon = tk.PhotoImage(file=icon_path)
             self.toolbar_icons['zif2'] = icon
             btn = ttk.Button(self.frame, image=icon, 
-                           command=lambda: self.app._on_trassir_click('ZIF2'))
+                           command=self.app.load_cone_zif2)
             btn.pack(side='left', padx=2)
             btn.image = icon
             ToolTip(btn, "Загрузить Конус ЗИФ2")

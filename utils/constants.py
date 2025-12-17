@@ -2,7 +2,7 @@
 Константы приложения
 """
 
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 APP_NAME = "Cone App"
 DESCRIPTION = "Приложение для построения треугольников и расчета объемов и масс конусов"
 GITHUB_URL = "https://github.com/SemonoffArt/cone"
@@ -13,7 +13,7 @@ COPYRIGHT = "Copyright © 2025 Semonoff Art"
 EMAIL = "semonoff@gmail.com"
 
 # (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-LOG_LEVEL = 'WARNING' # Level of logging
+LOG_LEVEL = 'INFO' # Level of logging
 
 # Цвета
 COLOR_TRIANGLE = "blue"
@@ -29,8 +29,10 @@ TEXT_FONT = ("Arial", 10)
 
 # Настройки по умолчанию
 DEFAULT_PIXEL_SIZE_M = 0.008  # размер пикселя в метрах (1 мм = 0.001 м)
-CANVAS_WIDTH = 800
-CANVAS_HEIGHT = 600
+# WIN_WIDTH = 1024
+# WIN_HEIGHT = 768
+CANVAS_WIDTH = 1495
+CANVAS_HEIGHT = 886
 
 # Настройки Trassir камер
 CAM_CONE_ZIF1 = {"chanel_name": "ЗИФ-1 19. Конус Руда", "trassir_ip": "10.100.59.10", "pixel_size_m": 0.091, 
