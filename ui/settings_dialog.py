@@ -120,7 +120,7 @@ class SettingsDialog:
         row += 1
         
         # Пароль
-        ttk.Label(parent, text="Пароль Trassir:").grid(
+        ttk.Label(parent, text="Пароль Trassir WEB:").grid(
             row=row, column=0, sticky='w', pady=5, padx=5)
         vars_dict['password'] = tk.StringVar()
         ttk.Entry(parent, textvariable=vars_dict['password'], width=40, show='*').grid(
