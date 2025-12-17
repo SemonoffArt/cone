@@ -89,10 +89,17 @@ class TrassirHandler:
             cam_config: Конфигурация камеры
         """
         try:
+            # Получаем пароль из конфигурации (по умолчанию 'master')
+            password = cam_config.get("password", "master")
+            
             # Создаём или обновляем подключение к Trassir
             if self.trassir is None or self.trassir.ip != trassir_ip:
-                app_logger.info(f"Connecting to Trassir at {trassir_ip}")
-                self.trassir = Trassir(ip=trassir_ip)
+                app_logger.info(f"Connecting to Trassir at {trassir_ip} with password: {password}")
+                try:
+                    self.trassir = Trassir(ip=trassir_ip, password=password)
+                except ValueError as e:
+                    # Ошибка автентификации
+                    raise ValueError(f"Не удалось подключиться к Trassir:\n{str(e)}")
             
             # Обновляем кэш каналов
             self.trassir.update_channels_cache()

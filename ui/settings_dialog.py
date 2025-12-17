@@ -119,6 +119,14 @@ class SettingsDialog:
             row=row, column=1, sticky='ew', pady=5, padx=5)
         row += 1
         
+        # Пароль
+        ttk.Label(parent, text="Пароль Trassir:").grid(
+            row=row, column=0, sticky='w', pady=5, padx=5)
+        vars_dict['password'] = tk.StringVar()
+        ttk.Entry(parent, textvariable=vars_dict['password'], width=40, show='*').grid(
+            row=row, column=1, sticky='ew', pady=5, padx=5)
+        row += 1
+        
         # Размер пикселя
         ttk.Label(parent, text="Размер пикселя (м):").grid(
             row=row, column=0, sticky='w', pady=5, padx=5)
@@ -176,6 +184,7 @@ class SettingsDialog:
         zif1_config = self.config.get("CAM_CONE_ZIF1", {})
         self.zif1_vars['trassir_ip'].set(zif1_config.get('trassir_ip', ''))
         self.zif1_vars['chanel_name'].set(zif1_config.get('chanel_name', ''))
+        self.zif1_vars['password'].set(zif1_config.get('password', 'master'))
         self.zif1_vars['pixel_size_m'].set(str(zif1_config.get('pixel_size_m', '')))
         self.zif1_vars['k_vol'].set(str(zif1_config.get('k_vol', '')))
         self.zif1_vars['k_den'].set(str(zif1_config.get('k_den', '')))
@@ -187,6 +196,7 @@ class SettingsDialog:
         zif2_config = self.config.get("CAM_CONE_ZIF2", {})
         self.zif2_vars['trassir_ip'].set(zif2_config.get('trassir_ip', ''))
         self.zif2_vars['chanel_name'].set(zif2_config.get('chanel_name', ''))
+        self.zif2_vars['password'].set(zif2_config.get('password', 'master'))
         self.zif2_vars['pixel_size_m'].set(str(zif2_config.get('pixel_size_m', '')))
         self.zif2_vars['k_vol'].set(str(zif2_config.get('k_vol', '')))
         self.zif2_vars['k_den'].set(str(zif2_config.get('k_den', '')))
@@ -224,6 +234,7 @@ class SettingsDialog:
             zif1_data = {
                 'trassir_ip': self.zif1_vars['trassir_ip'].get().strip(),
                 'chanel_name': self.zif1_vars['chanel_name'].get().strip(),
+                'password': self.zif1_vars['password'].get().strip() or 'master',
                 'pixel_size_m': float(self.zif1_vars['pixel_size_m'].get()),
                 'k_vol': float(self.zif1_vars['k_vol'].get()),
                 'k_den': float(self.zif1_vars['k_den'].get()),
@@ -236,6 +247,7 @@ class SettingsDialog:
             zif2_data = {
                 'trassir_ip': self.zif2_vars['trassir_ip'].get().strip(),
                 'chanel_name': self.zif2_vars['chanel_name'].get().strip(),
+                'password': self.zif2_vars['password'].get().strip() or 'master',
                 'pixel_size_m': float(self.zif2_vars['pixel_size_m'].get()),
                 'k_vol': float(self.zif2_vars['k_vol'].get()),
                 'k_den': float(self.zif2_vars['k_den'].get()),
@@ -279,6 +291,7 @@ class SettingsDialog:
             # Восстанавливаем ZIF1
             self.zif1_vars['trassir_ip'].set(CAM_CONE_ZIF1.get('trassir_ip', ''))
             self.zif1_vars['chanel_name'].set(CAM_CONE_ZIF1.get('chanel_name', ''))
+            self.zif1_vars['password'].set(CAM_CONE_ZIF1.get('password', 'master'))
             self.zif1_vars['pixel_size_m'].set(str(CAM_CONE_ZIF1.get('pixel_size_m', '')))
             self.zif1_vars['k_vol'].set(str(CAM_CONE_ZIF1.get('k_vol', '')))
             self.zif1_vars['k_den'].set(str(CAM_CONE_ZIF1.get('k_den', '')))
@@ -289,6 +302,7 @@ class SettingsDialog:
             # Восстанавливаем ZIF2
             self.zif2_vars['trassir_ip'].set(CAM_CONE_ZIF2.get('trassir_ip', ''))
             self.zif2_vars['chanel_name'].set(CAM_CONE_ZIF2.get('chanel_name', ''))
+            self.zif2_vars['password'].set(CAM_CONE_ZIF2.get('password', 'master'))
             self.zif2_vars['pixel_size_m'].set(str(CAM_CONE_ZIF2.get('pixel_size_m', '')))
             self.zif2_vars['k_vol'].set(str(CAM_CONE_ZIF2.get('k_vol', '')))
             self.zif2_vars['k_den'].set(str(CAM_CONE_ZIF2.get('k_den', '')))

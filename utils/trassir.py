@@ -134,9 +134,15 @@ class Trassir:
         try:
             self._channels = self._fetch_channels_list()
             self._channels_timestamp = time.time()
+        except ValueError as e:
+            # Ошибка автентификации или некорректный ответ
+            app_logger.error('Failed to initialize Trassir channels: %s', str(e))
+            self._channels = []
+            raise  # Пробрасываем исключение для обработки в UI
         except Exception as e:
             app_logger.error('Failed to initialize Trassir channels: %s', e)
             self._channels = []
+            raise ValueError(f'Ошибка подключения к Trassir: {str(e)}')
 
     @property
     def channels(self) -> List[Dict[str, Any]]:
@@ -190,10 +196,20 @@ class Trassir:
                     params=payload,
                     timeout=5
                 )
+                
+                # Проверяем статус ответа
+                if response.status_code == 401:
+                    app_logger.error('Authentication failed: Invalid password for Trassir at %s', self.ip)
+                    raise ValueError(f'Неверный пароль для Trassir на {self.ip}')
+                
+                if not response.ok:
+                    app_logger.error('HTTP error %s from Trassir: %s', response.status_code, response.text)
+                    raise ValueError(f'Trassir вернул ошибку: HTTP {response.status_code}')
+                
                 objects_text = response.text
         except RequestException as e:
             app_logger.error('Failed to fetch objects from Trassir: %s', e)
-            return []
+            raise ValueError(f'Не удалось подключиться к Trassir: {str(e)}')
 
         if not objects_text:
             app_logger.warning('Empty response from Trassir server')
@@ -202,12 +218,17 @@ class Trassir:
         try:
             cleaned_text = _remove_comments(objects_text)
             objects = json.loads(cleaned_text)
-            channels = [obj for obj in objects if obj.get(
-                'class') == 'Channel']
+            
+            # Проверяем, что objects - это список, а не строка или другой тип
+            if not isinstance(objects, list):
+                app_logger.error('Unexpected response format from Trassir: %s', type(objects))
+                raise ValueError(f'Некорректный формат ответа от Trassir. Возможно, неверный пароль.')
+            
+            channels = [obj for obj in objects if isinstance(obj, dict) and obj.get('class') == 'Channel']
             return self._sort_channels(channels)
         except json.JSONDecodeError as e:
-            app_logger.error('Failed to parse JSON response: %s', e)
-            raise
+            app_logger.error('Failed to parse JSON response: %s. Response text: %s', e, objects_text[:200])
+            raise ValueError(f'Некорректный ответ от Trassir. Проверьте пароль и IP адрес.')
 
     def get_channel_screenshot(
         self,
@@ -232,6 +253,11 @@ class Trassir:
                 url = f'{self.url}/screenshot/{guid}'
                 response = http_session.get(url, params=payload, timeout=5)
 
+                # Проверяем статус ответа
+                if response.status_code == 401:
+                    app_logger.error('Authentication failed: Invalid password for screenshot')
+                    raise ValueError(f'Неверный пароль для получения скриншота')
+                
                 if response.ok and len(response.content) > 100:
                     if raw_img:
                         return response.content
