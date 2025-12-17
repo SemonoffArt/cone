@@ -329,9 +329,33 @@ class MainWindow:
                 # Очищаем старый треугольник
                 self.triangle_manager.clear()
                 
-                # Добавляем новые вершины
-                for vertex in vertices:
-                    self.triangle_manager.add_vertex(vertex)
+                # Преобразуем координаты с учётом масштаба изображения
+                # auto_detect_triangle() возвращает координаты для оригинального изображения
+                original_size = self.canvas_handler.original_image_size
+                current_size = self.canvas_handler.current_image_size
+                
+                if original_size and current_size:
+                    # Вычисляем коэффициент масштаба (от оригинала к отображаемому)
+                    scale_x = current_size[0] / original_size[0]
+                    scale_y = current_size[1] / original_size[1]
+                    
+                    app_logger.info(
+                        f"Scaling vertices from {original_size} to {current_size} "
+                        f"(scale_x: {scale_x:.3f}, scale_y: {scale_y:.3f})"
+                    )
+                    
+                    # Добавляем масштабированные вершины
+                    for vertex in vertices:
+                        x_orig, y_orig = vertex
+                        x_scaled = x_orig * scale_x
+                        y_scaled = y_orig * scale_y
+                        self.triangle_manager.add_vertex(x_scaled, y_scaled)
+                        app_logger.debug(f"Vertex: ({x_orig:.0f}, {y_orig:.0f}) -> ({x_scaled:.0f}, {y_scaled:.0f})")
+                else:
+                    # Если нет информации о размерах, используем координаты как есть
+                    for vertex in vertices:
+                        x, y = vertex
+                        self.triangle_manager.add_vertex(x, y)
                 
                 self.status_var.set("Треугольник построен автоматически")
                 app_logger.info("Triangle auto-built successfully")

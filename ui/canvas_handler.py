@@ -208,8 +208,8 @@ class CanvasHandler:
             # Текст с размерами
             length_px = sides[i]['length_px']
             length_m = sides[i]['length_m']
-            label_text = f"{side_names[i]}: {length_px:.0f}px\n ({length_m:.2f}м)"
-            
+            # label_text = f"{side_names[i]}: {length_px:.0f}px\n ({length_m:.2f}м)"
+            label_text = f"{length_px:.0f}px\n({length_m:.2f}м)"
             # Вычисляем смещение для текста (перпендикулярно стороне)
             dx = end[0] - start[0]
             dy = end[1] - start[1]

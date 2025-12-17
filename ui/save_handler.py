@@ -268,7 +268,7 @@ class SaveHandler:
         
         # Дата-время
         now = datetime.now()
-        datetime_str = now.strftime("%Y-%m-%d %H:%M:%S")
+        datetime_str = now.strftime("%d.%m.%Y %H:%M:%S")
         text_lines.append(datetime_str)
         
         # Информация о конусе
@@ -300,8 +300,9 @@ class SaveHandler:
                 text_lines.append(f"Высота: {height:.2f} м")
                 
                 # Добавляем параметры через разделитель
-                text_lines.append("")
+                text_lines.append(" ")
                 text_lines.append("-" * 30)
+                text_lines.append(" ")
                 text_lines.append(f"Размер пикселя: {pixel_size:.4f} м")
                 text_lines.append(f"Коэффициент объёма: {k_vol:.2f}")
                 text_lines.append(f"Плотность: {k_den:.2f} т/м³")
