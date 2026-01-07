@@ -4,6 +4,8 @@ let currentImage = null;
 let vertices = [];
 let draggingVertex = null;
 let imageScale = 1.0;
+let defaultImageScale = 1.0;  // Запоминаем начальный масштаб
+let userZoomLevel = 1.0;  // Пользовательский масштаб (zoom)
 let imageOffset = { x: 0, y: 0 };
 
 // Инициализация при загрузке страницы
@@ -63,6 +65,11 @@ function initializeEventListeners() {
     document.getElementById('auto-build-btn').addEventListener('click', autoDetectTriangle);
     document.getElementById('clear-btn').addEventListener('click', clearTriangle);
     document.getElementById('calculate-btn').addEventListener('click', calculateVolume);
+    
+    // Кнопки масштабирования
+    document.getElementById('zoom-in-btn').addEventListener('click', zoomIn);
+    document.getElementById('zoom-out-btn').addEventListener('click', zoomOut);
+    document.getElementById('zoom-reset-btn').addEventListener('click', zoomReset);
     
     // Canvas события
     canvas.addEventListener('click', handleCanvasClick);
@@ -202,6 +209,8 @@ function loadImageToCanvas(imageSrc, originalWidth, originalHeight) {
         const scaleX = canvas.width / img.width;
         const scaleY = canvas.height / img.height;
         imageScale = Math.max(scaleX, scaleY);  // ← Используем max для заполнения
+        defaultImageScale = imageScale;  // Сохраняем начальный масштаб
+        userZoomLevel = 1.0;  // Сбрасываем zoom
         
         // Вычисляем смещение для центрирования
         const scaledWidth = img.width * imageScale;
@@ -289,13 +298,23 @@ function drawSideLabels() {
         const v1 = vertices[i];
         const v2 = vertices[(i + 1) % 3];
         
-        // Вычисляем длину в пикселях (на оригинальном изображении)
-        const dx = (v2.x - v1.x) / imageScale;
-        const dy = (v2.y - v1.y) / imageScale;
+        // Преобразуем координаты canvas в координаты оригинального изображения
+        const v1Original = [
+            (v1.x - imageOffset.x) / imageScale,
+            (v1.y - imageOffset.y) / imageScale
+        ];
+        const v2Original = [
+            (v2.x - imageOffset.x) / imageScale,
+            (v2.y - imageOffset.y) / imageScale
+        ];
+        
+        // Вычисляем длину в пикселях оригинального изображения
+        const dx = v2Original[0] - v1Original[0];
+        const dy = v2Original[1] - v1Original[1];
         const lengthPx = Math.sqrt(dx * dx + dy * dy);
         const lengthM = lengthPx * pixelSize;
         
-        // Середина стороны
+        // Середина стороны (в координатах canvas для отрисовки)
         const midX = (v1.x + v2.x) / 2;
         const midY = (v1.y + v2.y) / 2;
         
@@ -434,19 +453,9 @@ function calculateVolume() {
     
     updateStatus('Расчёт объёма...');
     
-    const pixelSize = parseFloat(document.getElementById('pixel-size').value) || 0.1;
-    const kVol = parseFloat(document.getElementById('k-vol').value) || 1.0;
-    const kDen = parseFloat(document.getElementById('k-den').value) || 1.7;
+    // Сначала обновляем информацию о сторонах (включает autoCalculateVolume)
+    updateTriangleInfo();
     
-    // Конвертируем координаты обратно в координаты оригинального изображения
-    const originalVertices = vertices.map(v => [
-        (v.x - imageOffset.x) / imageScale,
-        (v.y - imageOffset.y) / imageScale
-    ]);
-    
-    // Рассчитываем на стороне браузера
-    const results = calculateConeParameters(originalVertices, pixelSize, kVol, kDen);
-    displayResults(results.sides, results.cone);
     updateStatus('Расчёт завершён');
 }
 
@@ -583,14 +592,7 @@ function calculateConeParameters(triangleVertices, pixelSizeM, kVol, kDen) {
 
 // Отображение результатов
 function displayResults(sides, cone) {
-    // Стороны треугольника
-    const sideNames = ['AB', 'BC', 'CA'];
-    sides.forEach((side, index) => {
-        const elem = document.getElementById(`side-${sideNames[index].toLowerCase()}`);
-        elem.textContent = `Сторона ${sideNames[index]}: ${side.length_px.toFixed(1)} px (${side.length_m.toFixed(2)} m)`;
-    });
-    
-    // Параметры конуса
+    // Параметры конуса (без обновления сторон треугольника)
     document.getElementById('volume-value').textContent = `Объем: ${cone.volume.toFixed(2)} m³`;
     document.getElementById('mass-value').textContent = `Масса: ${cone.mass.toFixed(2)} т`;
     document.getElementById('params-value').textContent = 
@@ -628,9 +630,19 @@ function updateTriangleInfo() {
         const v1 = vertices[i];
         const v2 = vertices[(i + 1) % 3];
         
-        // Вычисляем длину в пикселях (на оригинальном изображении)
-        const dx = (v2.x - v1.x) / imageScale;
-        const dy = (v2.y - v1.y) / imageScale;
+        // Преобразуем координаты canvas в координаты оригинального изображения
+        const v1Original = [
+            (v1.x - imageOffset.x) / imageScale,
+            (v1.y - imageOffset.y) / imageScale
+        ];
+        const v2Original = [
+            (v2.x - imageOffset.x) / imageScale,
+            (v2.y - imageOffset.y) / imageScale
+        ];
+        
+        // Вычисляем длину в пикселях оригинального изображения
+        const dx = v2Original[0] - v1Original[0];
+        const dy = v2Original[1] - v1Original[1];
         const lengthPx = Math.sqrt(dx * dx + dy * dy);
         const lengthM = lengthPx * pixelSize;
         
@@ -709,4 +721,98 @@ async function saveSettings() {
     
     alert('Настройки сохранены');
     closeSettingsModal();
+}
+
+// ========================
+// Управление масштабом
+// ========================
+
+// Увеличение масштаба
+function zoomIn() {
+    if (!currentImage) {
+        updateStatus('Сначала загрузите изображение');
+        return;
+    }
+    
+    userZoomLevel = Math.min(userZoomLevel * 1.2, 5.0);  // Макс. 5x zoom
+    applyZoom();
+    updateStatus(`Масштаб: ${(userZoomLevel * 100).toFixed(0)}%`);
+}
+
+// Уменьшение масштаба
+function zoomOut() {
+    if (!currentImage) {
+        updateStatus('Сначала загрузите изображение');
+        return;
+    }
+    
+    userZoomLevel = Math.max(userZoomLevel / 1.2, 0.5);  // Мин. 0.5x zoom
+    applyZoom();
+    updateStatus(`Масштаб: ${(userZoomLevel * 100).toFixed(0)}%`);
+}
+
+// Сброс масштаба
+function zoomReset() {
+    if (!currentImage) {
+        updateStatus('Сначала загрузите изображение');
+        return;
+    }
+    
+    userZoomLevel = 1.0;
+    applyZoom();
+    updateStatus('Масштаб сброшен к 100%');
+}
+
+// Применение масштаба
+function applyZoom() {
+    if (!currentImage) return;
+    
+    // Сохраняем старый масштаб и смещение
+    const oldImageScale = imageScale;
+    const oldImageOffset = { x: imageOffset.x, y: imageOffset.y };
+    
+    // Преобразуем вершины треугольника в координаты оригинального изображения
+    const originalVertices = vertices.map(v => ({
+        x: (v.x - oldImageOffset.x) / oldImageScale,
+        y: (v.y - oldImageOffset.y) / oldImageScale
+    }));
+    
+    // Сохраняем центр canvas в координатах изображения
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const oldImageX = (centerX - imageOffset.x) / imageScale;
+    const oldImageY = (centerY - imageOffset.y) / imageScale;
+    
+    // Применяем новый масштаб
+    imageScale = defaultImageScale * userZoomLevel;
+    
+    // Пересчитываем смещение чтобы центр остался на месте
+    const scaledWidth = currentImage.width * imageScale;
+    const scaledHeight = currentImage.height * imageScale;
+    imageOffset.x = centerX - (oldImageX * imageScale);
+    imageOffset.y = centerY - (oldImageY * imageScale);
+    
+    // Ограничиваем смещение чтобы изображение не уходило за границы
+    const maxOffsetX = scaledWidth - canvas.width;
+    const maxOffsetY = scaledHeight - canvas.height;
+    
+    if (maxOffsetX > 0) {
+        imageOffset.x = Math.max(-maxOffsetX, Math.min(0, imageOffset.x));
+    } else {
+        imageOffset.x = (canvas.width - scaledWidth) / 2;
+    }
+    
+    if (maxOffsetY > 0) {
+        imageOffset.y = Math.max(-maxOffsetY, Math.min(0, imageOffset.y));
+    } else {
+        imageOffset.y = (canvas.height - scaledHeight) / 2;
+    }
+    
+    // Преобразуем вершины обратно в новые координаты canvas
+    vertices = originalVertices.map(v => ({
+        x: v.x * imageScale + imageOffset.x,
+        y: v.y * imageScale + imageOffset.y
+    }));
+    
+    redrawCanvas();
 }
