@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Расчёт Объёма Конуса</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Левая панель: Canvas -->
+        <div class="canvas-panel">
+            <div class="toolbar">
+                <button id="load-file-btn" class="btn btn-primary">📁 Загрузить файл</button>
+                <button id="load-zif1-btn" class="btn btn-secondary">📷 ЗИФ-1</button>
+                <button id="load-zif2-btn" class="btn btn-secondary">📷 ЗИФ-2</button>
+                <button id="auto-build-btn" class="btn btn-success">🤖 Авто-построение</button>
+                <button id="clear-btn" class="btn btn-danger">🗑️ Очистить</button>
+                <button id="calculate-btn" class="btn btn-primary">📊 Рассчитать</button>
+            </div>
+            
+            <div class="canvas-container">
+                <canvas id="main-canvas" width="800" height="600"></canvas>
+            </div>
+            
+            <div class="status-bar">
+                <span id="status-text">Готов к работе</span>
+            </div>
+            
+            <input type="file" id="file-input" accept="image/*" style="display: none;">
+        </div>
+        
+        <!-- Правая панель: Информация и настройки -->
+        <div class="info-panel">
+            <h2>Информация</h2>
+            
+            <!-- Информация о конусе -->
+            <div class="info-section">
+                <h3>Конус:</h3>
+                <div class="info-value large" id="volume-value">Объем: -</div>
+                <div class="info-value large" id="mass-value">Масса: -</div>
+                <div class="info-value" id="params-value">Параметры конуса: -</div>
+                <div class="formula">Формула: V = ⅓πR²h*k</div>
+            </div>
+            
+            <hr>
+            
+            <!-- Информация о треугольнике -->
+            <div class="info-section">
+                <h3>Треугольник:</h3>
+                <div class="info-value" id="side-ab">Сторона AB: -</div>
+                <div class="info-value" id="side-bc">Сторона BC: -</div>
+                <div class="info-value" id="side-ca">Сторона CA: -</div>
+            </div>
+            
+            <hr>
+            
+            <!-- Настройки -->
+            <div class="info-section">
+                <h3>Настройки:</h3>
+                
+                <div class="setting-row">
+                    <label for="pixel-size">Размер пикселя (м):</label>
+                    <input type="number" id="pixel-size" step="0.001" value="{{ cam_zif1.pixel_size_m }}">
+                </div>
+                
+                <div class="setting-row">
+                    <label for="k-vol">Коэфф. объёма:</label>
+                    <input type="number" id="k-vol" step="0.01" value="{{ cam_zif1.k_vol }}">
+                </div>
+                
+                <div class="setting-row">
+                    <label for="k-den">Плотность (т/м³):</label>
+                    <input type="number" id="k-den" step="0.1" value="{{ cam_zif1.k_den }}">
+                </div>
+                
+                <div class="setting-row">
+                    <label for="threshold">Порог бинаризации:</label>
+                    <input type="number" id="threshold" min="0" max="255" value="{{ cam_zif1.threshold }}">
+                </div>
+            </div>
+            
+            <hr>
+            
+            <!-- Информация об изображении -->
+            <div class="info-section">
+                <h3>Изображение:</h3>
+                <div class="info-value" id="image-size">Размер: -</div>
+                <div class="info-value" id="image-source">Источник: -</div>
+                <div class="info-value" id="image-display">Отображение: -</div>
+            </div>
+            
+            <hr>
+            
+            <!-- Настройки конфигурации -->
+            <div class="info-section">
+                <button id="settings-btn" class="btn btn-secondary full-width">⚙️ Настройки камер</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно настроек -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Настройки камер</h2>
+            
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="zif1">ЗИФ-1</button>
+                <button class="tab-btn" data-tab="zif2">ЗИФ-2</button>
+            </div>
+            
+            <div id="zif1-tab" class="tab-content active">
+                <h3>Конус ЗИФ-1</h3>
+                <div class="setting-row">
+                    <label>IP адрес Trassir:</label>
+                    <input type="text" id="zif1-ip" value="{{ cam_zif1.trassir_ip }}">
+                </div>
+                <div class="setting-row">
+                    <label>Имя канала:</label>
+                    <input type="text" id="zif1-channel" value="{{ cam_zif1.chanel_name }}">
+                </div>
+                <div class="setting-row">
+                    <label>Пароль:</label>
+                    <input type="password" id="zif1-password" value="{{ cam_zif1.password }}">
+                </div>
+                <div class="setting-row">
+                    <label>Размер пикселя (м):</label>
+                    <input type="number" id="zif1-pixel-size" step="0.001" value="{{ cam_zif1.pixel_size_m }}">
+                </div>
+                <div class="setting-row">
+                    <label>Коэфф. объёма:</label>
+                    <input type="number" id="zif1-k-vol" step="0.01" value="{{ cam_zif1.k_vol }}">
+                </div>
+                <div class="setting-row">
+                    <label>Плотность (т/м³):</label>
+                    <input type="number" id="zif1-k-den" step="0.1" value="{{ cam_zif1.k_den }}">
+                </div>
+                <div class="setting-row">
+                    <label>Порог бинаризации:</label>
+                    <input type="number" id="zif1-threshold" value="{{ cam_zif1.threshold }}">
+                </div>
+            </div>
+            
+            <div id="zif2-tab" class="tab-content">
+                <h3>Конус ЗИФ-2</h3>
+                <div class="setting-row">
+                    <label>IP адрес Trassir:</label>
+                    <input type="text" id="zif2-ip" value="{{ cam_zif2.trassir_ip }}">
+                </div>
+                <div class="setting-row">
+                    <label>Имя канала:</label>
+                    <input type="text" id="zif2-channel" value="{{ cam_zif2.chanel_name }}">
+                </div>
+                <div class="setting-row">
+                    <label>Пароль:</label>
+                    <input type="password" id="zif2-password" value="{{ cam_zif2.password }}">
+                </div>
+                <div class="setting-row">
+                    <label>Размер пикселя (м):</label>
+                    <input type="number" id="zif2-pixel-size" step="0.001" value="{{ cam_zif2.pixel_size_m }}">
+                </div>
+                <div class="setting-row">
+                    <label>Коэфф. объёма:</label>
+                    <input type="number" id="zif2-k-vol" step="0.01" value="{{ cam_zif2.k_vol }}">
+                </div>
+                <div class="setting-row">
+                    <label>Плотность (т/м³):</label>
+                    <input type="number" id="zif2-k-den" step="0.1" value="{{ cam_zif2.k_den }}">
+                </div>
+                <div class="setting-row">
+                    <label>Порог бинаризации:</label>
+                    <input type="number" id="zif2-threshold" value="{{ cam_zif2.threshold }}">
+                </div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button id="save-settings-btn" class="btn btn-primary">💾 Сохранить</button>
+                <button id="cancel-settings-btn" class="btn btn-secondary">❌ Отмена</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
