@@ -11,9 +11,42 @@ document.addEventListener('DOMContentLoaded', function() {
     canvas = document.getElementById('main-canvas');
     ctx = canvas.getContext('2d');
     
+    // Устанавливаем размер canvas под контейнер
+    resizeCanvas();
+    
+    // Обработчик изменения размера окна
+    window.addEventListener('resize', function() {
+        resizeCanvas();
+        if (currentImage) {
+            redrawCanvas();
+        }
+    });
+    
     initializeEventListeners();
     updateStatus('Готов к работе');
 });
+
+// Изменение размера canvas под контейнер
+function resizeCanvas() {
+    const container = canvas.parentElement;
+    const rect = container.getBoundingClientRect();
+    
+    // Устанавливаем размер canvas равным размеру контейнера
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    
+    // Пересчитываем масштаб изображения если оно загружено
+    if (currentImage) {
+        const scaleX = canvas.width / currentImage.width;
+        const scaleY = canvas.height / currentImage.height;
+        imageScale = Math.min(scaleX, scaleY, 1.0);
+        
+        const scaledWidth = currentImage.width * imageScale;
+        const scaledHeight = currentImage.height * imageScale;
+        imageOffset.x = (canvas.width - scaledWidth) / 2;
+        imageOffset.y = (canvas.height - scaledHeight) / 2;
+    }
+}
 
 // Инициализация обработчиков событий
 function initializeEventListeners() {
@@ -165,10 +198,10 @@ function loadImageToCanvas(imageSrc, originalWidth, originalHeight) {
     img.onload = function() {
         currentImage = img;
         
-        // Вычисляем масштаб для вмещения изображения
+        // Вычисляем масштаб для заполнения всего canvas
         const scaleX = canvas.width / img.width;
         const scaleY = canvas.height / img.height;
-        imageScale = Math.min(scaleX, scaleY, 1.0);
+        imageScale = Math.max(scaleX, scaleY);  // ← Используем max для заполнения
         
         // Вычисляем смещение для центрирования
         const scaledWidth = img.width * imageScale;
@@ -393,7 +426,7 @@ function clearTriangle() {
 }
 
 // Расчёт объёма
-async function calculateVolume() {
+function calculateVolume() {
     if (vertices.length !== 3) {
         alert('Постройте треугольник (3 вершины)');
         return;
@@ -411,34 +444,14 @@ async function calculateVolume() {
         (v.y - imageOffset.y) / imageScale
     ]);
     
-    try {
-        const response = await fetch('/calculate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                vertices: originalVertices,
-                pixel_size: pixelSize,
-                k_vol: kVol,
-                k_den: kDen
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            displayResults(data.sides, data.cone);
-            updateStatus('Расчёт завершён');
-        } else {
-            updateStatus('Ошибка расчёта: ' + data.error);
-        }
-    } catch (error) {
-        console.error('Calculate error:', error);
-        updateStatus('Ошибка расчёта');
-    }
+    // Рассчитываем на стороне браузера
+    const results = calculateConeParameters(originalVertices, pixelSize, kVol, kDen);
+    displayResults(results.sides, results.cone);
+    updateStatus('Расчёт завершён');
 }
 
-// Автоматический расчёт объёма (без alert и обновления статуса)
-async function autoCalculateVolume() {
+// Автоматический расчёт объёма (на стороне браузера)
+function autoCalculateVolume() {
     if (vertices.length !== 3) {
         return;
     }
@@ -453,26 +466,119 @@ async function autoCalculateVolume() {
         (v.y - imageOffset.y) / imageScale
     ]);
     
-    try {
-        const response = await fetch('/calculate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                vertices: originalVertices,
-                pixel_size: pixelSize,
-                k_vol: kVol,
-                k_den: kDen
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            displayResults(data.sides, data.cone);
-        }
-    } catch (error) {
-        console.error('Auto-calculate error:', error);
+    // Рассчитываем на стороне браузера
+    const results = calculateConeParameters(originalVertices, pixelSize, kVol, kDen);
+    displayResults(results.sides, results.cone);
+}
+
+// ========================
+// Геометрические функции
+// ========================
+
+// Расстояние между двумя точками
+function distanceBetweenPoints(point1, point2) {
+    const dx = point2[0] - point1[0];
+    const dy = point2[1] - point1[1];
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+// Площадь треугольника по трём точкам
+function triangleArea(point1, point2, point3) {
+    const x1 = point1[0], y1 = point1[1];
+    const x2 = point2[0], y2 = point2[1];
+    const x3 = point3[0], y3 = point3[1];
+    return Math.abs((x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1)) / 2.0;
+}
+
+// Высота треугольника относительно основания
+function triangleHeight(basePoint1, basePoint2, oppositePoint) {
+    const area = triangleArea(basePoint1, basePoint2, oppositePoint);
+    const baseLength = distanceBetweenPoints(basePoint1, basePoint2);
+    return baseLength > 0 ? (2 * area) / baseLength : 0;
+}
+
+// ========================
+// Расчёт параметров конуса
+// ========================
+
+function calculateConeParameters(triangleVertices, pixelSizeM, kVol, kDen) {
+    if (triangleVertices.length !== 3) {
+        return {
+            sides: [],
+            cone: { volume: 0, mass: 0, radius_m: 0, height_m: 0 }
+        };
     }
+    
+    const [pointA, pointB, pointC] = triangleVertices;
+    
+    // Рассчитываем стороны треугольника
+    const sides = [
+        {
+            name: 'AB',
+            length_px: distanceBetweenPoints(pointA, pointB),
+            length_m: distanceBetweenPoints(pointA, pointB) * pixelSizeM
+        },
+        {
+            name: 'BC',
+            length_px: distanceBetweenPoints(pointB, pointC),
+            length_m: distanceBetweenPoints(pointB, pointC) * pixelSizeM
+        },
+        {
+            name: 'CA',
+            length_px: distanceBetweenPoints(pointC, pointA),
+            length_m: distanceBetweenPoints(pointC, pointA) * pixelSizeM
+        }
+    ];
+    
+    // Находим наиболее горизонтальную сторону (минимальная разница по Y)
+    const sideCandidates = [
+        { base1: pointA, base2: pointB, opposite: pointC },
+        { base1: pointB, base2: pointC, opposite: pointA },
+        { base1: pointC, base2: pointA, opposite: pointB }
+    ];
+    
+    let minYDiff = Infinity;
+    let bestBase1 = null;
+    let bestBase2 = null;
+    let bestOpposite = null;
+    
+    for (const candidate of sideCandidates) {
+        const yDiff = Math.abs(candidate.base2[1] - candidate.base1[1]);
+        if (yDiff < minYDiff) {
+            minYDiff = yDiff;
+            bestBase1 = candidate.base1;
+            bestBase2 = candidate.base2;
+            bestOpposite = candidate.opposite;
+        }
+    }
+    
+    // Длина основания конуса
+    const baseLengthPx = distanceBetweenPoints(bestBase1, bestBase2);
+    const baseLengthM = baseLengthPx * pixelSizeM;
+    const radiusM = baseLengthM / 2;
+    
+    // Высота конуса
+    const heightPx = triangleHeight(bestBase1, bestBase2, bestOpposite);
+    const heightM = heightPx * pixelSizeM;
+    
+    // Объём конуса: V = (1/3) * π * r² * h * k_vol
+    let volume = 0;
+    if (heightM > 0 && radiusM > 0) {
+        volume = (1 / 3) * Math.PI * radiusM * radiusM * heightM * kVol;
+    }
+    
+    // Масса: m = V * k_den
+    const mass = volume * kDen;
+    
+    return {
+        sides: sides,
+        cone: {
+            volume: volume,
+            mass: mass,
+            radius_m: radiusM,
+            height_m: heightM
+        }
+    };
 }
 
 // Отображение результатов
